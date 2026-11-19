@@ -4,7 +4,7 @@ export function Privacy() {
   return (
     <Shell title="Privacy" backTo={{ name: 'settings' }}>
       <article class="stack" style={{ maxWidth: '62ch' }}>
-        <p class="lead">Touchline is built so that children's names stay on the coach's phone. Here is exactly what goes where.</p>
+        <p class="lead">Touchline is built so that children's names are hidden on the coach's phone before anything is sent. Here is exactly what goes where, and what it can't catch.</p>
 
         <h2 class="title">On this phone</h2>
         <p>Your squad (first names and nicknames), session notes, player cards and reports are stored in this browser's storage on this device. Nobody else can see them. Delete them any time in Settings, or by clearing the site's data in your browser.</p>

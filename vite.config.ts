@@ -12,7 +12,7 @@ export default defineConfig({
       manifest: {
         name: 'Touchline: pitch-side notes',
         short_name: 'Touchline',
-        description: 'Pitch-side session notes for grassroots youth football coaches. Works offline; names never leave the phone.',
+        description: 'Pitch-side session notes for grassroots youth football coaches. Works offline; names are hidden before anything leaves the phone.',
         start_url: '/',
         scope: '/',
         display: 'standalone',

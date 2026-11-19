@@ -1,6 +1,6 @@
 # Touchline
 
-**Pitch-side session notes for grassroots youth football coaches.** Tap a few chips per child after training, and Touchline turns them into praise, a next step and a shareable player card for every player, then a weekly update for parents. It works with no signal, and children's names never leave the coach's phone.
+**Pitch-side session notes for grassroots youth football coaches.** Tap a few chips per child after training, and Touchline turns them into praise, a next step and a shareable player card for every player, then a weekly update for parents. It works with no signal, and children's names are hidden before anything leaves the coach's phone.
 
 Live: **https://touchline.impactlayer.workers.dev** · Licence: [Apache-2.0](LICENSE) · Built for the Firebase #BuildHybridAI 2026 hackathon (Web / Chrome).
 
@@ -19,7 +19,7 @@ Touchline uses **Firebase AI Logic hybrid inference** so each job runs where it 
 | Weekly parent update for a group | **Cloud** (Gemini Flash-Lite) | `only_in_cloud` | Longer, polished writing across several sessions, done back in signal |
 | 4-week progress report per child | **Cloud** | `only_in_cloud` | Reasoning across a month of records |
 
-**Names never leave the device.** Before *any* model call (on-device included, because `prefer_on_device` can fall back to the cloud), every squad name, nickname and part of a name is replaced with a stable token such as `P03`, plus any extra words the coach lists, emails and phone numbers. If the notes still mention someone outside the squad ("mum Sarah Jones"), a **Check before it goes** step asks the coach to hide them, ticked by default. A leak check then refuses to send anything that still contains a name. Results come back with tokens and are restored on the device. Every AI result shows where it ran ("On this device" or "In the cloud · names hidden"), and a **What the model saw** panel shows the exact text that was sent.
+**Names are hidden on the device.** Before *any* model call (on-device included, because `prefer_on_device` can fall back to the cloud), every squad name, nickname and part of a name is replaced with a stable token such as `P03`, plus any extra words the coach lists, emails and phone numbers. If the notes still mention someone outside the squad ("mum Sarah Jones"), a **Check before it goes** step asks the coach to hide them, ticked by default. A leak check then refuses to send anything that still contains a name. Results come back with tokens and are restored on the device. Every AI result shows where it ran ("On this device" or "In the cloud · names hidden"), and a **What the model saw** panel shows the exact text that was sent.
 
 Where to look in the code:
 

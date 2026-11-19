@@ -2,7 +2,7 @@
   "name": "touchline",
   "version": "1.0.0",
   "private": true,
-  "description": "Pitch-side session notes for grassroots youth football coaches. Hybrid on-device and cloud AI with Firebase AI Logic; children's names never leave the device.",
+  "description": "Pitch-side session notes for grassroots youth football coaches. Hybrid on-device and cloud AI with Firebase AI Logic; children's names are hidden on the device before anything is sent.",
   "license": "Apache-2.0",
   "type": "module",
   "scripts": {

@@ -48,7 +48,7 @@ export function Welcome() {
             </div>
             <div class="promise">
               <span class="ic"><IconEyeOff /></span>
-              <p><strong>Children's names stay on this phone</strong><span class="muted small">Before anything reaches the cloud, names become tokens like P03. You can read exactly what was sent.</span></p>
+              <p><strong>Children's names are hidden first</strong><span class="muted small">Before anything reaches the cloud, names become tokens like P03. You can read exactly what was sent.</span></p>
             </div>
             <div class="promise">
               <span class="ic"><IconCloud /></span>

@@ -1,0 +1,13 @@
+import {setup,URL} from './review2-lib.mjs';
+const w=+process.argv[2]||375;
+const {b,p,dump,errs,reqs}=await setup({width:w});
+await p.goto(URL); await p.waitForTimeout(2500);
+await dump('01-welcome');
+await p.getByRole('button', { name: /demo/i }).first().click(); await p.waitForTimeout(4000);
+await dump('02-today-demo');
+await p.goto(URL+'#/squad'); await p.waitForTimeout(1000); await dump('03-squad');
+await p.goto(URL+'#/settings'); await p.waitForTimeout(1000); await dump('04-settings');
+await p.goto(URL+'#/updates'); await p.waitForTimeout(1000); await dump('05-updates');
+await p.goto(URL+'#/privacy'); await p.waitForTimeout(1000); await dump('06-privacy');
+console.log('ERRS',errs); console.log('REQS',reqs.join('\n'));
+await b.close();
