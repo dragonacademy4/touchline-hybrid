@@ -19,7 +19,7 @@ Touchline uses **Firebase AI Logic hybrid inference** so each job runs where it 
 | Weekly parent update for a group | **Cloud** (Gemini Flash-Lite) | `only_in_cloud` | Longer, polished writing across several sessions, done back in signal |
 | 4-week progress report per child | **Cloud** | `only_in_cloud` | Reasoning across a month of records |
 
-**Names are hidden on the device.** Before *any* model call (on-device included, because `prefer_on_device` can fall back to the cloud), every squad name, nickname and part of a name is replaced with a stable token such as `P03`, plus any extra words the coach lists, emails and phone numbers. If the notes still mention someone outside the squad ("mum Sarah Jones"), a **Check before it goes** step asks the coach to hide them, ticked by default. A leak check then refuses to send anything that still contains a name. Results come back with tokens and are restored on the device. Every AI result shows where it ran ("On this device" or "In the cloud · names hidden"), and a **What the model saw** panel shows the exact text that was sent.
+**Names are hidden on the device.** Before *any* model call (on-device included, because `prefer_on_device` can fall back to the cloud), every squad name, nickname and part of a name is replaced with a stable token such as `P03`, plus any extra words the coach lists, emails and phone numbers. If the notes still mention someone outside the squad ("mum Sarah Jones"), a **Check before it goes** step asks the coach to hide them, ticked by default. A leak check then refuses to send anything that still contains a name. Results come back with tokens and are restored on the device. Every AI result shows where it ran ("On this device" or "In the cloud · names hidden"), and a **What the cloud saw** panel (or "What the on-device model saw") shows the exact text that was sent.
 
 Where to look in the code:
 
@@ -78,7 +78,7 @@ The app runs fully without any keys: squad, capture, cards, flags and offline no
 ## Tests
 
 ```bash
-npm test                 # unit tests (vitest + fast-check), incl. 220+ adversarial masking tests
+npm test                 # 570 unit tests (vitest + fast-check), incl. 220+ adversarial masking tests
 npm run test:coverage    # coverage, thresholds enforced (90% lines on core modules)
 npm run build && npm run e2e   # Playwright at 375 px and 1280 px, axe accessibility checks
 npm run e2e:live         # unmocked run against the real Firebase backend (needs TOUCHLINE_APPCHECK_DEBUG_TOKEN)
@@ -102,7 +102,7 @@ TypeScript, Preact, Vite, Firebase AI Logic (Gemini Nano in Chrome, Gemini 3.5 F
 
 ## AI disclosure and provenance
 
-Built during the hackathon submission period (from 19 November 2026) with **Claude Code** (Anthropic) as the AI coding assistant. No pre-existing code: everything in this repository was written for this entry. Open-source dependencies are listed in `package.json`.
+Built during the hackathon submission period (from 19 November 2026) with **Claude Code** (Anthropic) as the AI coding assistant: working from our written brief, it designed and wrote the code, tests and documentation, and separate Claude reviewer agents reviewed security and UX. No pre-existing code: everything in this repository was written for this entry. Open-source dependencies are listed in `package.json`; `src/lib/commonEnglish.ts` is generated from SCOWL (notice in the file).
 
 ## Who made it
 
