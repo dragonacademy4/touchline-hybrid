@@ -70,27 +70,28 @@ function TabBar() {
   );
 }
 
-/** Offline indicator plus where AI will run right now. */
+/** One status pill: offline state plus where AI will run right now. */
 export function StatusPills() {
   const isOnline = online.value;
   const n = nano.value;
   const cloud = settings.value.cloudAllowed;
   let ai: { cls: string; label: string; icon: JSX.Element; title: string };
   if (n === 'available') ai = { cls: 'pill-ai-device', label: 'On device', icon: <IconPhone />, title: 'AI runs on this device with Gemini Nano' };
-  else if (isOnline && cloud) ai = { cls: 'pill-ai-cloud', label: 'Cloud', icon: <IconEyeOff />, title: 'AI runs in the cloud with names hidden' };
+  else if (isOnline && cloud) ai = { cls: 'pill-ai-cloud', label: 'Cloud', icon: <IconCloud />, title: 'AI runs in the cloud with names hidden' };
   else ai = { cls: 'pill-ai-none', label: 'Notes only', icon: <IconTag />, title: 'No AI available right now. Notes are saved and can be structured later.' };
-  return (
-    <>
-      {!isOnline && (
-        <span class="pill pill-offline" role="status">
-          <IconWifiOff /> Offline
-        </span>
-      )}
-      <a class={`pill ${ai.cls}`} href="#/settings" title={ai.title} aria-label={`AI: ${ai.title}`}>
-        {ai.icon}
-        <span class="pill-label">{ai.label}</span>
+  if (!isOnline) {
+    return (
+      <a class="pill pill-offline" href="#/settings" title={ai.title} aria-label={`Offline. AI: ${ai.title}`}>
+        <IconWifiOff />
+        <span class="pill-label">Offline · {ai.label.toLowerCase()}</span>
       </a>
-    </>
+    );
+  }
+  return (
+    <a class={`pill ${ai.cls}`} href="#/settings" title={ai.title} aria-label={`AI: ${ai.title}`}>
+      {ai.icon}
+      <span class="pill-label">{ai.label}</span>
+    </a>
   );
 }
 
@@ -126,7 +127,7 @@ export function Banner(props: { tone: 'warn' | 'info' | 'device' | 'danger'; tit
       <div style={{ flex: 1 }}>
         {props.title && <strong>{props.title}</strong>}
         {props.children && <div class="banner-text">{props.children}</div>}
-        {props.action && <div style={{ marginTop: 8 }}>{props.action}</div>}
+        {props.action && <div style={{ marginTop: '8px' }}>{props.action}</div>}
       </div>
     </div>
   );
@@ -279,4 +280,11 @@ export function Spinner({ label }: { label?: string }) {
 
 export function initials(name: string) {
   return name.trim().slice(0, 1).toUpperCase() || '?';
+}
+
+/** A flag's text, always naming the child it's about. */
+export function flagLabel(f: { playerId: string | null; note: string }, nameOf: (id: string | null) => string | undefined): string {
+  const name = f.playerId ? nameOf(f.playerId) : undefined;
+  if (!name || f.note.toLowerCase().startsWith(name.toLowerCase())) return f.note;
+  return `${name}: ${f.note}`;
 }

@@ -44,6 +44,8 @@ function capitalise(s: string): string {
 /**
  * Builds a plain observation from chips alone. Used when no model is available
  * (offline and no on-device model) so the coach still gets a usable record.
+ * Free text is never copied into these child-facing fields: it can hold
+ * welfare notes or other people's names that must not reach a card.
  */
 export function observationFromChips(note: PlayerNote, name: string): PlayerObservation | null {
   const chips = note.chips.map(chipById).filter((c): c is Chip => !!c);
@@ -52,7 +54,7 @@ export function observationFromChips(note: PlayerNote, name: string): PlayerObse
   if (!strengths.length && !workOns.length && !note.text.trim()) return null;
   return {
     playerId: note.playerId,
-    strength: strengths.length ? capitalise(joinPhrases(strengths)) + '.' : note.text.trim() || 'Took part in today\'s session.',
+    strength: strengths.length ? capitalise(joinPhrases(strengths)) + '.' : 'Took part in today\'s session.',
     nextStep: workOns.length ? `Keep working on ${joinPhrases(workOns)}.` : 'Keep building on this next week.',
     praise: strengths.length ? `Well done ${name}, ${joinPhrases(strengths)} today!` : `Thanks for your effort today, ${name}!`,
   };
@@ -68,4 +70,17 @@ export function welfareFlags(notes: PlayerNote[], nameOf: (id: string) => string
     }
   }
   return flags;
+}
+
+/** Words in a coach's free text that suggest something to follow up. */
+const WELFARE_WORDS = /\b(upset|cry|cried|crying|tears|hurt|injur\w*|knock\w*|ankle|knee|head ?knock|concuss\w*|bleed\w*|sick|ill|poorly|asthma|inhaler|hospital|bull(y|ied|ying)|worried|anxious|scared|quiet|withdrawn|moved out|divorc\w*|split up|separated|bereave\w*|passed away|died|funeral|collected late|picked up late|no kit|forgot (his|her|their) kit|hungry|safeguard\w*)\b/i;
+
+/**
+ * Flags notes whose free text mentions a welfare matter, so a concern never
+ * depends on a model noticing it. The note text stays on the phone.
+ */
+export function textWelfareFlags(notes: PlayerNote[], nameOf: (id: string) => string): SessionFlag[] {
+  return notes
+    .filter((n) => WELFARE_WORDS.test(n.text))
+    .map((n) => ({ playerId: n.playerId, kind: 'welfare' as const, note: `${nameOf(n.playerId)}: your note says "${n.text.trim()}". Worth following up.` }));
 }

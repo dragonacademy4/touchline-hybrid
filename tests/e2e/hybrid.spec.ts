@@ -29,7 +29,7 @@ test('offline: notes save, no AI runs, chips give a plain record; back online, A
   await startDemo(page);
   await startSession(page);
   await context.setOffline(true);
-  await expect(page.getByRole('status').filter({ hasText: 'Offline' })).toBeVisible();
+  await expect(page.getByRole('link', { name: /^Offline\. AI:/ })).toBeVisible();
   await expect(page.getByText('No signal, and no on-device model here')).toBeVisible();
   await addNote(page, 'Kai', ['Worked hard', 'Hold position']);
   await page.getByRole('button', { name: 'Save notes (no AI right now)' }).click();
@@ -116,4 +116,35 @@ test('extra hidden words never reach the cloud', async ({ page }) => {
   const body = log.requests.find((r) => r.url.includes('firebasevertexai'))!.body;
   expect(body).not.toMatch(/Riverside|900123|Nia/);
   expect(body).toContain('[X1]');
+});
+
+test('check before it goes: names outside the squad are caught and hidden before sending', async ({ page }, info) => {
+  const log = await mockFirebase(page);
+  await startDemo(page);
+  await startSession(page);
+  await addNote(page, 'Ollie', ['Brave'], 'Ollie helped Mason up, mum Sarah Jones was watching');
+  await page.getByRole('button', { name: 'Structure in the cloud' }).click();
+  const check = page.getByTestId('send-check');
+  await expect(check.getByText('Check before it goes')).toBeVisible();
+  await expect(check.getByRole('button', { name: 'Mason' })).toHaveAttribute('aria-pressed', 'true');
+  await expect(check.getByRole('button', { name: 'Sarah Jones' })).toHaveAttribute('aria-pressed', 'true');
+  expect(log.requests.filter((r) => r.url.includes('firebasevertexai'))).toEqual([]);
+  await page.screenshot({ path: `${QA}/e2e/${info.project.name}-09-check-before-send.png` });
+  await check.getByRole('button', { name: 'Hide 2 and send' }).click();
+  await expect(page).toHaveURL(/\/review$/);
+  const body = log.requests.find((r) => r.url.includes('firebasevertexai'))!.body;
+  expect(body).not.toMatch(/Mason|Sarah|Jones|Ollie/);
+  await page.goto('/#/settings');
+  await expect(page.getByRole('button', { name: 'Stop hiding Mason' })).toBeVisible();
+});
+
+test('check before it goes: Cancel sends nothing', async ({ page }) => {
+  const log = await mockFirebase(page);
+  await startDemo(page);
+  await startSession(page);
+  await addNote(page, 'Ollie', [], 'Played well with Kayden');
+  await page.getByRole('button', { name: 'Structure in the cloud' }).click();
+  await page.getByTestId('send-check').getByRole('button', { name: 'Cancel' }).click();
+  await expect(page.getByRole('dialog')).toBeHidden();
+  expect(log.requests.filter((r) => r.url.includes('firebasevertexai'))).toEqual([]);
 });

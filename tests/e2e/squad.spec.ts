@@ -16,12 +16,16 @@ test('own squad from scratch: empty states, add, validate, duplicate, edit, remo
   await expect(dialog.getByRole('alert')).toHaveText('Enter a group, e.g. Under 9s.');
   await dialog.getByRole('textbox', { name: 'Nicknames (optional)' }).fill('Sam, Sammy, x');
   await dialog.getByRole('combobox', { name: 'Group' }).fill('Under 11s');
-  await dialog.getByRole('button', { name: 'Save, add another' }).click();
+  await dialog.getByRole('button', { name: 'Save + next' }).click();
   await expect(page.getByText('Sam B added.')).toBeVisible();
   await dialog.getByRole('textbox', { name: 'First name' }).fill('sam b');
   await dialog.getByRole('button', { name: 'Save', exact: true }).click();
   await expect(dialog.getByRole('alert')).toContainText("There's already a Sam B in Under 11s");
-  await dialog.getByRole('textbox', { name: 'First name' }).fill('Sam K');
+  await dialog.getByRole('textbox', { name: 'First name' }).fill("Zara O'Connor-Whitfield");
+  await dialog.getByRole('button', { name: 'Save', exact: true }).click();
+  await expect(dialog.getByRole('alert')).toContainText(`Is "O'Connor-Whitfield" a surname?`);
+  await expect(dialog.getByRole('textbox', { name: /First name/ })).toHaveAttribute('aria-invalid', 'true');
+  await dialog.getByRole('textbox', { name: /First name/ }).fill('Sam K');
   await dialog.getByRole('textbox', { name: 'Nicknames (optional)' }).fill('Sam');
   await dialog.getByRole('button', { name: 'Save', exact: true }).click();
   await expect(dialog).toBeHidden();
@@ -38,7 +42,8 @@ test('own squad from scratch: empty states, add, validate, duplicate, edit, remo
   await page.goto('/#/squad');
   await page.getByRole('link', { name: /Sam K/ }).click();
   await page.getByRole('button', { name: 'Edit Sam K' }).click();
-  await page.getByRole('button', { name: 'Remove' }).click();
+  await page.getByRole('button', { name: 'Remove', exact: true }).click();
+  await page.getByRole('button', { name: 'Remove, keep notes' }).click();
   await expect(page.getByText('Sam K deleted.')).toBeVisible();
   await page.getByRole('button', { name: 'Undo' }).click();
   await page.goto('/#/squad');
@@ -51,9 +56,10 @@ test('removing a player with history archives them; tokens are never reused', as
   await startDemo(page);
   await page.goto('/#/player/demo-p1');
   await page.getByRole('button', { name: 'Edit Ollie' }).click();
-  await page.getByRole('button', { name: 'Remove' }).click();
+  await page.getByRole('button', { name: 'Remove', exact: true }).click();
+  await page.getByRole('button', { name: 'Remove, keep notes' }).click();
   await expect(page.getByText('Ollie removed. Their past notes are kept.')).toBeVisible();
-  await page.goto('/#/squad');
+  await expect(page).toHaveURL(/#\/squad$/);
   await page.getByText('Removed players (1)').click();
   await page.getByRole('button', { name: 'Add player' }).click();
   await page.getByRole('textbox', { name: 'First name' }).fill('Ffion');
@@ -104,4 +110,23 @@ test('keyboard: sheet traps focus and Escape closes it', async ({ page }) => {
   expect(inside).toBe(true);
   await page.keyboard.press('Escape');
   await expect(page.getByRole('dialog')).toBeHidden();
+});
+
+test('erasing a player removes their notes everywhere', async ({ page }) => {
+  await mockFirebase(page);
+  await startDemo(page);
+  await page.goto('/#/session/demo-s3/review');
+  await expect(page.getByRole('heading', { name: 'Freya' })).toBeVisible();
+  await page.goto('/#/player/demo-p4');
+  await page.getByRole('button', { name: 'Edit Freya' }).click();
+  await page.getByRole('button', { name: 'Remove', exact: true }).click();
+  await page.getByRole('button', { name: 'Erase their notes too' }).click();
+  await expect(page.getByText('Freya and their notes have been erased.')).toBeVisible();
+  await expect(page).toHaveURL(/#\/squad$/);
+  await expect(page.getByText('Removed players')).toHaveCount(0);
+  await page.goto('/#/session/demo-s3/review');
+  await expect(page.getByRole('heading', { name: 'Players (6)' })).toBeVisible();
+  await expect(page.getByText(/Freya/)).toHaveCount(0);
+  await page.goto('/#/');
+  await expect(page.getByText(/Freya/)).toHaveCount(0);
 });

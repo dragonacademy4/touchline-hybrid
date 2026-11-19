@@ -2,7 +2,7 @@ import { useState } from 'preact/hooks';
 import { activePlayers, createSession, flagsFor, groups, players, sortedSessions, weeklyCoverage } from '../../data/store';
 import { londonDate, relativeDate } from '../../lib/dates';
 import type { Session } from '../../lib/types';
-import { Empty, Sheet, Shell, SourceBadge } from '../components';
+import { Empty, Sheet, Shell, SourceBadge, flagLabel } from '../components';
 import { IconAlert, IconChevron, IconFlag, IconPlus, PitchArc } from '../icons';
 import { href, navigate } from '../router';
 
@@ -52,20 +52,20 @@ export function Today() {
           <div class="row-between">
             <p class="eyebrow" id="hero-label">Feedback this week{shownGroup ? ` · ${shownGroup}` : ''}</p>
             {allGroups.length > 1 && (
-              <select class="select" style={{ width: 'auto', minHeight: 36, padding: '4px 10px', background: 'transparent', color: 'inherit', borderColor: 'currentColor' }}
+              <select class="select" style={{ width: 'auto', minHeight: '36px', padding: '4px 10px', background: 'transparent', color: 'inherit', borderColor: 'currentColor' }}
                 aria-label="Group" value={shownGroup ?? ''} onChange={(e) => setGroup((e.target as HTMLSelectElement).value || null)}>
                 <option value="">All groups</option>
                 {allGroups.map((g) => <option key={g} value={g}>{g}</option>)}
               </select>
             )}
           </div>
-          <p class="hero-number" style={{ marginTop: 8 }}>
+          <p class="hero-number" style={{ marginTop: '8px' }}>
             {cov.covered} <small>of {cov.total} players</small>
           </p>
-          <div class="meter" style={{ marginTop: 12 }} role="progressbar" aria-valuemin={0} aria-valuemax={cov.total} aria-valuenow={cov.covered} aria-label="Players with feedback this week">
+          <div class="meter" style={{ marginTop: '12px' }} role="progressbar" aria-valuemin={0} aria-valuemax={cov.total} aria-valuenow={cov.covered} aria-label="Players with feedback this week">
             <span style={{ width: `${pct}%` }} />
           </div>
-          <p class="small" style={{ marginTop: 10, opacity: 0.9 }}>
+          <p class="small" style={{ marginTop: '10px', opacity: 0.9 }}>
             {cov.total === 0
               ? 'No players in this group yet.'
               : cov.covered === cov.total
@@ -105,7 +105,7 @@ export function Today() {
             {recentWelfare.map((f, i) => (
               <a key={`w${i}`} class="flag flag-welfare" href={href({ name: 'review', id: f.sessionId })} style={{ textDecoration: 'none' }}>
                 <IconAlert />
-                <span>{f.note}</span>
+                <span>{flagLabel(f, nameOf)}</span>
               </a>
             ))}
             {flags.map((f, i) => (
@@ -132,7 +132,7 @@ export function Today() {
                       <strong class="ellipsis">{s.focus || 'Training'}</strong>
                       <span class="small muted num" style={{ flex: 'none' }}>{relativeDate(s.date, today)}</span>
                     </div>
-                    <div class="row wrap" style={{ gap: 8, marginTop: 4 }}>
+                    <div class="row wrap" style={{ gap: '8px', marginTop: '4px' }}>
                       <span class="small muted">{s.group} · {s.structured ? s.structured.observations.length : notedCount(s)} noted</span>
                       {s.structured ? <SourceBadge source={s.structured.source} /> : <span class="badge badge-chips">Notes only, not structured yet</span>}
                     </div>

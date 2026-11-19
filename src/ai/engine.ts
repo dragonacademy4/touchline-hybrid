@@ -12,8 +12,12 @@
  * real runner using Firebase AI Logic.
  */
 import { assertNoLeaks, createMasker, type Masker } from '../lib/mask';
-import { observationFromChips, welfareFlags } from '../lib/chips';
-import { addDays, weekStart } from '../lib/dates';
+import { CHIPS, observationFromChips, textWelfareFlags, welfareFlags } from '../lib/chips';
+
+/** Chip labels are app text, not names ("Head up", "Great first touch"). */
+const CHIP_WORDS = CHIPS.flatMap((c) => c.label.split(/\s+/));
+import { addDays, shortDate, weekStart } from '../lib/dates';
+import { findSuspectNames } from '../lib/suspects';
 import {
   buildParentUpdatePrompt,
   buildProgressPrompt,
@@ -102,7 +106,7 @@ function assertDataHasNoLeaks(masker: Masker, prompt: string, instructions: stri
 
 export function buildMasker(players: Player[], settings: Pick<Settings, 'extraHiddenWords'>): Masker {
   return createMasker({
-    members: players.map((p) => ({ token: p.token, name: p.name, aliases: p.aliases })),
+    members: players.filter((p) => !p.erased).map((p) => ({ token: p.token, name: p.name, aliases: p.aliases })),
     extraTerms: settings.extraHiddenWords,
   });
 }
@@ -121,7 +125,7 @@ export function chipsOnlySession(session: Session, players: Player[]): Structure
   return {
     observations,
     summary: session.generalNotes.trim(),
-    flags: welfareFlags(session.notes, nameOf),
+    flags: withTextFlags(welfareFlags(session.notes, nameOf), session.notes, nameOf),
     source: 'chips',
     sentText: '',
     model: 'none',
@@ -134,27 +138,65 @@ export interface MaskedPreview {
   restore: Record<string, string>;
   tokens: Set<string>;
   masker: Masker;
+  /** The coach-written parts of the prompt, masked, one per line (for the pre-send check). */
+  userText: string;
+}
+
+/**
+ * Called before anything that may reach the cloud is sent, when the masked text
+ * still contains words that look like names of people outside the squad.
+ * Resolve with the words to hide (an empty list sends as is), or null to cancel.
+ */
+export type ConfirmSend = (check: { prompt: string; suspects: string[] }) => Promise<string[] | null>;
+
+export class SendCancelled extends Error {
+  constructor() {
+    super('Cancelled by the coach before sending.');
+    this.name = 'SendCancelled';
+  }
+}
+
+/** Builds once, asks the coach about suspect names, and rebuilds with the chosen words hidden. */
+async function checkBeforeSend<T extends { prompt: string; userText: string }>(build: (extraHide: string[]) => T, confirm?: ConfirmSend): Promise<T> {
+  const first = build([]);
+  if (!confirm) return first;
+  const suspects = findSuspectNames(first.userText, CHIP_WORDS);
+  if (!suspects.length) return first;
+  const hide = await confirm({ prompt: first.prompt, suspects });
+  if (hide === null) throw new SendCancelled();
+  return hide.length ? build(hide) : first;
 }
 
 /** Builds the masked session prompt. Exposed so the UI can show it before sending. */
-export function prepareSessionPrompt(session: Session, players: Player[], settings: Settings, prompts: Prompts = DEFAULT_PROMPTS): MaskedPreview {
-  const masker = buildMasker(players, settings);
+export function prepareSessionPrompt(
+  session: Session,
+  players: Player[],
+  settings: Settings,
+  prompts: Prompts = DEFAULT_PROMPTS,
+  extraHide: string[] = [],
+): MaskedPreview {
+  const masker = buildMasker(players, { extraHiddenWords: [...settings.extraHiddenWords, ...extraHide] });
   const restore: Record<string, string> = {};
   const m = (t: string) => masker.mask(t, restore).text;
   const tokenOf = new Map(players.map((p) => [p.id, p.token]));
   const noted = session.notes.filter(hasNote).filter((n) => tokenOf.has(n.playerId));
-  const prompt = buildSessionPrompt(
-    {
-      date: session.date,
-      group: m(session.group),
-      focus: m(session.focus),
-      generalNotes: m(session.generalNotes),
-      players: noted.map((n) => ({ token: tokenOf.get(n.playerId)!, chips: n.chips, text: m(n.text) })),
-    },
-    prompts.session,
-  );
+  const input = {
+    date: session.date,
+    group: m(session.group),
+    focus: m(session.focus),
+    generalNotes: m(session.generalNotes),
+    players: noted.map((n) => ({ token: tokenOf.get(n.playerId)!, chips: n.chips, text: m(n.text) })),
+  };
+  const prompt = buildSessionPrompt(input, prompts.session);
   assertDataHasNoLeaks(masker, prompt, prompts.session);
-  return { prompt, restore, tokens: new Set(noted.map((n) => tokenOf.get(n.playerId)!)), masker };
+  const userText = [input.focus, input.generalNotes, ...input.players.map((p) => p.text)].filter(Boolean).join('\n');
+  return { prompt, restore, tokens: new Set(noted.map((n) => tokenOf.get(n.playerId)!)), masker, userText };
+}
+
+/** Adds free-text welfare flags for children who aren't flagged already. */
+function withTextFlags(flags: SessionFlag[], notes: Session['notes'], nameOf: (id: string) => string): SessionFlag[] {
+  const flagged = new Set(flags.filter((f) => f.kind === 'welfare').map((f) => f.playerId));
+  return [...flags, ...textWelfareFlags(notes, nameOf).filter((f) => !flagged.has(f.playerId))];
 }
 
 /**
@@ -184,10 +226,15 @@ export async function structureSession(
   conditions: Conditions,
   run: ModelRunner,
   prompts: Prompts = DEFAULT_PROMPTS,
+  confirm?: ConfirmSend,
 ): Promise<StructuredSession> {
   const plan = planSessionRun(conditions);
   if (plan.kind === 'chips') return chipsOnlySession(session, players);
-  const { prompt, restore, tokens, masker } = prepareSessionPrompt(session, players, settings, prompts);
+  // Only ask when the call may reach the cloud; only_on_device never leaves the phone.
+  const { prompt, restore, tokens, masker } = await checkBeforeSend(
+    (extra) => prepareSessionPrompt(session, players, settings, prompts, extra),
+    plan.mode === 'only_on_device' ? undefined : confirm,
+  );
   if (tokens.size === 0 && !session.generalNotes.trim()) return chipsOnlySession(session, players);
   const res = await run({ prompt, schema: SESSION_SCHEMA, mode: plan.mode, purpose: 'session' });
   const parsed = parseSession(res.text, tokens);
@@ -215,7 +262,7 @@ export async function structureSession(
   return {
     observations,
     summary: un(parsed.summary),
-    flags: mergeFlags(welfareFlags(session.notes, nameOf), modelFlags),
+    flags: withTextFlags(mergeFlags(welfareFlags(session.notes, nameOf), modelFlags), session.notes, nameOf),
     source: res.source,
     sentText: prompt,
     model: res.model,
@@ -253,25 +300,29 @@ export async function parentUpdate(
   conditions: Conditions,
   run: ModelRunner,
   prompts: Prompts = DEFAULT_PROMPTS,
+  confirm?: ConfirmSend,
 ): Promise<CloudReport> {
   if (!canUseCloud(conditions)) throw new Error(conditions.online ? 'cloud_off' : 'offline');
   const week = sessionsInWeek(sessions, group, anyDay);
   if (!week.length) throw new NotEnoughData('No structured sessions for this group this week yet.');
-  const masker = buildMasker(players, settings);
-  const restore: Record<string, string> = {};
-  const m = (t: string) => masker.mask(t, restore).text;
-  const tokenOf = new Map(players.map((p) => [p.id, p.token]));
-  const records: MaskedSessionRecord[] = week.map((s) => ({
-    date: s.date,
-    focus: m(s.focus),
-    players: s.structured!.observations
-      .filter((o) => tokenOf.has(o.playerId))
-      .map((o) => ({ token: tokenOf.get(o.playerId)!, strength: m(o.strength), nextStep: m(o.nextStep) })),
-  }));
-  const tokens = new Set(records.flatMap((r) => r.players.map((p) => p.token)));
   const from = weekStart(anyDay);
-  const prompt = buildParentUpdatePrompt(m(group), from, records, prompts.parentUpdate);
-  assertDataHasNoLeaks(masker, prompt, prompts.parentUpdate);
+  const tokenOf = new Map(players.map((p) => [p.id, p.token]));
+  const { prompt, masker, restore, tokens } = await checkBeforeSend((extra) => {
+    const masker = buildMasker(players, { extraHiddenWords: [...settings.extraHiddenWords, ...extra] });
+    const restore: Record<string, string> = {};
+    const m = (t: string) => masker.mask(t, restore).text;
+    const records: MaskedSessionRecord[] = week.map((s) => ({
+      date: shortDate(s.date, anyDay),
+      focus: m(s.focus),
+      players: s.structured!.observations
+        .filter((o) => tokenOf.has(o.playerId))
+        .map((o) => ({ token: tokenOf.get(o.playerId)!, strength: m(o.strength), nextStep: m(o.nextStep) })),
+    }));
+    const prompt = buildParentUpdatePrompt(m(group), shortDate(from, anyDay), records, prompts.parentUpdate);
+    assertDataHasNoLeaks(masker, prompt, prompts.parentUpdate);
+    const userText = records.flatMap((r) => [r.focus, ...r.players.flatMap((p) => [p.strength, p.nextStep])]).join('\n');
+    return { prompt, masker, restore, tokens: new Set(records.flatMap((r) => r.players.map((p) => p.token))), userText };
+  }, confirm);
   const res = await run({ prompt, schema: PARENT_UPDATE_SCHEMA, mode: 'only_in_cloud', purpose: 'parent_update' });
   const parsed = parseParentUpdate(res.text, tokens);
   const byToken = new Map(players.map((p) => [p.token, p]));
@@ -304,22 +355,28 @@ export async function progressReport(
   conditions: Conditions,
   run: ModelRunner,
   prompts: Prompts = DEFAULT_PROMPTS,
+  confirm?: ConfirmSend,
 ): Promise<CloudReport> {
   if (!canUseCloud(conditions)) throw new Error(conditions.online ? 'cloud_off' : 'offline');
   const from = addDays(today, -(PROGRESS_DAYS - 1));
-  const masker = buildMasker(players, settings);
-  const restore: Record<string, string> = {};
-  const m = (t: string) => masker.mask(t, restore).text;
-  const records = recordsFor(sessions)
+  const mine = recordsFor(sessions)
     .filter((s) => s.date >= from && s.date <= today)
     .sort((a, b) => a.date.localeCompare(b.date))
     .flatMap((s) => {
       const o = s.structured!.observations.find((x) => x.playerId === player.id);
-      return o ? [{ date: s.date, focus: m(s.focus), strength: m(o.strength), nextStep: m(o.nextStep) }] : [];
+      return o ? [{ s, o }] : [];
     });
-  if (records.length < 2) throw new NotEnoughData(`${player.name} needs notes from at least 2 sessions in the last 4 weeks.`);
-  const prompt = buildProgressPrompt(player.token, from, today, records, prompts.progress);
-  assertDataHasNoLeaks(masker, prompt, prompts.progress);
+  if (mine.length < 2) throw new NotEnoughData(`${player.name} needs notes from at least 2 sessions in the last 4 weeks.`);
+  const { prompt, masker, restore } = await checkBeforeSend((extra) => {
+    const masker = buildMasker(players, { extraHiddenWords: [...settings.extraHiddenWords, ...extra] });
+    const restore: Record<string, string> = {};
+    const m = (t: string) => masker.mask(t, restore).text;
+    // Readable dates ("Mon 3 Nov") so the report doesn't quote ISO dates back.
+    const records = mine.map(({ s, o }) => ({ date: shortDate(s.date, today), focus: m(s.focus), strength: m(o.strength), nextStep: m(o.nextStep) }));
+    const prompt = buildProgressPrompt(player.token, shortDate(from, today), shortDate(today, today), records, prompts.progress);
+    assertDataHasNoLeaks(masker, prompt, prompts.progress);
+    return { prompt, masker, restore, userText: records.flatMap((r) => [r.focus, r.strength, r.nextStep]).join('\n') };
+  }, confirm);
   const res = await run({ prompt, schema: PROGRESS_SCHEMA, mode: 'only_in_cloud', purpose: 'progress' });
   const parsed = parseProgress(res.text);
   const un = (t: string) => masker.unmask(t, restore);
@@ -328,7 +385,7 @@ export async function progressReport(
     kind: 'progress',
     subject: player.id,
     period: today,
-    title: un(parsed.headline) || `${player.name}: last 4 weeks`,
+    title: un(parsed.headline) || `${player.name}: progress across ${mine.length} sessions`,
     body: un(parsed.progress),
     items: [
       ...parsed.strengths.map((s) => ({ playerId: null, text: `Strength: ${un(s)}` })),

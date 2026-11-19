@@ -41,7 +41,7 @@ export function Updates() {
               </select>
             </label>
           ) : (
-            <div class="field"><span>Group</span><p class="input" style={{ display: 'flex', alignItems: 'center', background: 'transparent' }}>{group}</p></div>
+            <div class="field"><span>Group</span><p style={{ minHeight: '48px', display: 'flex', alignItems: 'center', fontWeight: 700 }}>{group}</p></div>
           )}
           <label class="field"><span>Week</span>
             <select class="select" value={week} onChange={(e) => setWeek((e.target as HTMLSelectElement).value as 'this' | 'last')}>
@@ -57,7 +57,7 @@ export function Updates() {
         ) : blocked ? (
           <Banner tone="warn">{blocked}</Banner>
         ) : (
-          <button class="btn btn-cloud btn-lg btn-block" type="button" onClick={() => setRunning(true)}>
+          <button class="btn btn-primary btn-lg btn-block" type="button" onClick={() => setRunning(true)}>
             <IconEyeOff /> {current ? 'Write it again' : week === 'this' ? "Write this week's update" : "Write last week's update"}
           </button>
         )}
@@ -71,7 +71,7 @@ export function Updates() {
       </div>
       {running && (
         <CloudRunSheet title="Parent update" involved={involved}
-          job={(run, prompts, c) => parentUpdate(group, anyDay, sessions.value, players.value, settings.value, c, run, prompts)}
+          job={(run, prompts, c, confirm) => parentUpdate(group, anyDay, sessions.value, players.value, settings.value, c, run, prompts, confirm)}
           onDone={() => setRunning(false)} onClose={() => setRunning(false)} />
       )}
     </Shell>

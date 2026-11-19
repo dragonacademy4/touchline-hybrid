@@ -139,7 +139,7 @@ describe('chipsOnlySession', () => {
         nextStep: 'Keep working on using their weaker foot more.',
         praise: 'Well done Ollie, bravery on the ball today!',
       },
-      { playerId: 'p3', strength: 'Lovely  goal', nextStep: 'Keep building on this next week.', praise: 'Thanks for your effort today, Freya!' },
+      { playerId: 'p3', strength: "Took part in today's session.", nextStep: 'Keep building on this next week.', praise: 'Thanks for your effort today, Freya!' },
       { playerId: 'gone', strength: 'Real effort.', nextStep: 'Keep building on this next week.', praise: 'Well done Player, real effort today!' },
     ]);
     expect(out.flags).toEqual([{ playerId: 'p6', kind: 'welfare', note: 'Kai took a knock. Check in with their parent or carer.' }]);
@@ -337,7 +337,7 @@ describe('structureSession', () => {
     const { run } = fakeRunner('{"summary":"Fine"}');
     const out = await structureSession(s, squad, cfg, ONLINE_NANO, run);
     expect(out.observations.map((o) => o.playerId)).toEqual(['p1', 'p3', 'p4']);
-    expect(out.observations[2].strength).toBe('Sam set up the goal');
+    expect(out.observations[2].strength).toBe("Took part in today's session.");
   });
 
   it('throws ParseError on garbage and leaks nothing', async () => {
@@ -423,12 +423,12 @@ describe('parentUpdate', () => {
     expect(req.purpose).toBe('parent_update');
     expect(req.schema).toBe(PARENT_UPDATE_SCHEMA);
     expectNoNames(req.prompt);
-    expect(req.prompt).toContain('Group: U9 Lions. Week beginning 2026-11-16.');
-    expect(req.prompt).toContain('Session 2026-11-16 (focus: Passing with [P06]):');
+    expect(req.prompt).toContain('Group: U9 Lions. Week beginning Mon 16 Nov.');
+    expect(req.prompt).toContain('Session Mon 16 Nov (focus: Passing with [P06]):');
     expect(req.prompt).toContain('- P01: did well: Passed to [P03] well Next: Use the left foot');
-    expect(req.prompt).toContain('Session 2026-11-22');
-    expect(req.prompt).not.toContain('2026-11-15');
-    expect(req.prompt).not.toContain('2026-11-23');
+    expect(req.prompt).toContain('Session Sun 22 Nov');
+    expect(req.prompt).not.toContain('15 Nov');
+    expect(req.prompt).not.toContain('23 Nov');
     expect(req.prompt).not.toContain('Other group');
     expect(req.prompt).not.toContain('Not in squad');
 
@@ -513,11 +513,11 @@ describe('progressReport', () => {
     expect(req.purpose).toBe('progress');
     expect(req.schema).toBe(PROGRESS_SCHEMA);
     expectNoNames(req.prompt);
-    expect(req.prompt).toContain('Player: P01. Period: 2026-10-23 to 2026-11-19. 2 session record(s):');
-    const lines = req.prompt.split('\n').filter((l) => l.startsWith('- 2026'));
+    expect(req.prompt).toContain('Player: P01. Period: Fri 23 Oct to Thu 19 Nov. 2 session record(s):');
+    const lines = req.prompt.split('\n').filter((l) => /^- \w{3} \d+ \w{3} \(/.test(l));
     expect(lines).toEqual([
-      '- 2026-10-23 (focus: [P06]\'s rondo): did well: Brave alongside [P03] Next: Talk more',
-      '- 2026-11-19 (focus: Shooting): did well: Scored after a one-two with [A1] Next: Shoot low',
+      '- Fri 23 Oct (focus: [P06]\'s rondo): did well: Brave alongside [P03] Next: Talk more',
+      '- Thu 19 Nov (focus: Shooting): did well: Scored after a one-two with [A1] Next: Shoot low',
     ]);
 
     expect(r).toEqual({
@@ -525,7 +525,7 @@ describe('progressReport', () => {
       kind: 'progress',
       subject: 'p1',
       period: TODAY,
-      title: 'Ollie: last 4 weeks',
+      title: 'Ollie: progress across 2 sessions',
       body: 'Ollie grew in confidence alongside Sam.',
       items: [
         { playerId: null, text: 'Strength: Bravery' },

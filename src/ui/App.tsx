@@ -34,16 +34,16 @@ export function App() {
     return (
       <div class="shell" aria-busy="true">
         <main>
-          <div class="skeleton" style={{ height: 180, borderRadius: 22 }} />
-          <div class="skeleton" style={{ height: 56, borderRadius: 999, marginTop: 16 }} />
-          <div class="skeleton" style={{ height: 200, borderRadius: 14, marginTop: 24 }} />
+          <div class="skeleton" style={{ height: '180px', borderRadius: '22px' }} />
+          <div class="skeleton" style={{ height: '56px', borderRadius: '999px', marginTop: '16px' }} />
+          <div class="skeleton" style={{ height: '200px', borderRadius: '14px', marginTop: '24px' }} />
         </main>
       </div>
     );
   }
   if (loadError.value) {
     return (
-      <main style={{ paddingTop: 48 }}>
+      <main style={{ paddingTop: '48px' }}>
         <Banner tone="danger" title="Touchline couldn't open its storage">
           Your browser blocked local storage (private browsing can do this). Open Touchline in a normal Chrome window. ({loadError.value})
         </Banner>

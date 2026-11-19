@@ -127,7 +127,6 @@ main.no-tabs { padding-bottom: calc(var(--sp-12) + env(safe-area-inset-bottom));
 .btn-ghost { background: transparent; color: var(--ink); }
 .btn-ghost:hover { background: var(--surface-2); }
 .btn-danger { background: var(--surface); color: var(--danger); border-color: color-mix(in srgb, var(--danger) 45%, transparent); }
-.btn-cloud { background: var(--cloud); color: var(--cloud-ink); }
 .btn-block { width: 100%; }
 .btn-lg { min-height: 56px; font-size: var(--fs-lead); }
 .btn[disabled], .btn[aria-disabled='true'] { opacity: 0.5; cursor: not-allowed; transform: none; }
@@ -266,7 +265,7 @@ main.no-tabs { padding-bottom: calc(var(--sp-12) + env(safe-area-inset-bottom));
 @keyframes fade { from { opacity: 0; } }
 
 /* ---------- Toast ---------- */
-.toasts { position: fixed; z-index: 60; left: 0; right: 0; top: calc(68px + env(safe-area-inset-top)); display: grid; justify-items: center; gap: var(--sp-2); pointer-events: none; padding: 0 var(--pad); }
+.toasts { position: fixed; z-index: 60; left: 0; right: 0; bottom: calc(84px + env(safe-area-inset-bottom)); display: grid; justify-items: center; gap: var(--sp-2); pointer-events: none; padding: 0 var(--pad); }
 .toast { pointer-events: auto; max-width: 480px; display: flex; gap: var(--sp-3); align-items: center; background: var(--ink); color: var(--ground); padding: 12px 16px; border-radius: var(--r-md); font-size: var(--fs-small); font-weight: 700; box-shadow: 0 8px 24px rgba(0,0,0,0.2); animation: rise 0.2s var(--ease); }
 :root[data-theme='dark'] .toast { background: var(--surface-2); color: var(--ink); border: 1px solid var(--rule-strong); }
 .toast button { background: none; border: 0; color: inherit; text-decoration: underline; font-weight: 700; cursor: pointer; min-height: 32px; }
@@ -301,7 +300,7 @@ details.disclosure[open] > summary svg.chev-r { transform: rotate(90deg); }
 }
 .pcard .lines { position: absolute; inset: 0; opacity: 0.18; pointer-events: none; }
 .pcard .pc-top { display: flex; justify-content: space-between; align-items: center; position: relative; }
-.pcard .pc-focus { position: relative; font-family: var(--font-display); font-weight: 600; font-size: var(--fs-title); line-height: 1.1; margin-top: var(--sp-2); opacity: 0.9; max-width: 80%; }
+.pcard .pc-focus { position: relative; font-family: var(--font-display); font-weight: 600; font-size: var(--fs-title); line-height: 1.1; margin-top: var(--sp-2); opacity: 0.9; max-width: 68%; }
 .pcard .pc-club { font-size: var(--fs-caption); letter-spacing: 0.1em; text-transform: uppercase; font-weight: 700; opacity: 0.85; }
 .pcard .pc-star { width: 34px; height: 34px; color: #e2b84f; }
 .pcard .pc-name { position: relative; font-family: var(--font-display); font-weight: 700; font-size: clamp(2.6rem, 11vw, 3.6rem); line-height: 0.95; margin-top: auto; }
@@ -340,7 +339,6 @@ details.disclosure[open] > summary svg.chev-r { transform: rotate(90deg); }
 .footer-note { text-align: center; font-size: var(--fs-caption); color: var(--ink-muted); margin-top: var(--sp-8); }
 
 @media (min-width: 768px) {
-  .toasts { top: auto; bottom: calc(80px + env(safe-area-inset-bottom)); }
 }
 
 @media (min-width: 1024px) {
@@ -364,3 +362,6 @@ details.disclosure[open] > summary svg.chev-r { transform: rotate(90deg); }
   .fold.folded .fold-token { opacity: 1; }
   .skeleton { animation: none; }
 }
+
+/* With a sheet open, toasts sit at the top so they never cover its buttons. */
+body:has(.sheet) .toasts { bottom: auto; top: calc(12px + env(safe-area-inset-top)); }

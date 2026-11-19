@@ -19,7 +19,7 @@ export const SESSION_SCHEMA = {
         type: 'object',
         properties: {
           player: str('The player token exactly as given, e.g. P03'),
-          strength: str('One sentence: what the player did well, specific to the notes'),
+          strength: str('One sentence in the third person: what the player did well in football terms, specific to the notes'),
           nextStep: str('One sentence: one concrete thing to work on next session'),
           praise: str('One short, warm sentence addressed to the child, suitable for age 6-12'),
         },
@@ -33,7 +33,7 @@ export const SESSION_SCHEMA = {
         type: 'object',
         properties: {
           player: str('Player token, or empty string for the whole group'),
-          note: str('A welfare or safeguarding concern mentioned in the notes (injury, upset, missing kit)'),
+          note: str('A welfare or safeguarding matter from the notes (injury, upset, home situation, missing kit, collected late)'),
         },
         required: ['player', 'note'],
       },
@@ -46,14 +46,14 @@ export const PARENT_UPDATE_SCHEMA = {
   type: 'object',
   properties: {
     title: str('A short, friendly title for the weekly update'),
-    message: str('The update for all parents in the group: 80-140 words, warm, plain UK English'),
+    message: str('At most 3 short sentences for all parents in the group, using only the records'),
     players: {
       type: 'array',
       items: {
         type: 'object',
         properties: {
           player: str('Player token exactly as given'),
-          line: str('One sentence for this child\'s parents: a specific positive and what they are working on'),
+          line: str('One sentence with one specific positive from this player\'s records (everyone in the group reads it)'),
         },
         required: ['player', 'line'],
       },
@@ -65,7 +65,7 @@ export const PARENT_UPDATE_SCHEMA = {
 export const PROGRESS_SCHEMA = {
   type: 'object',
   properties: {
-    headline: str('One sentence summarising the player\'s progress over the period'),
+    headline: str('One sentence summarising what the records show over the period'),
     progress: str('A paragraph (60-120 words) on how the player has developed, citing specific sessions'),
     strengths: { type: 'array', items: str('A consistent strength, a few words') },
     focus: str('The single most useful thing to work on next'),

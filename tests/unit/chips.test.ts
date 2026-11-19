@@ -35,10 +35,10 @@ describe('observationFromChips', () => {
     expect(o.nextStep).toBe('Keep working on using their weaker foot more and calling for the ball.');
   });
 
-  it('uses the typed text as the strength when there are no strength chips', () => {
-    expect(observationFromChips(note('a', [], '  Lovely goal  '), 'Kai')).toEqual({
+  it('never copies free text into child-facing fields (it can hold welfare notes or other names)', () => {
+    expect(observationFromChips(note('a', [], '  dad moved out, mum Sarah Jones collected  '), 'Kai')).toEqual({
       playerId: 'a',
-      strength: 'Lovely goal',
+      strength: "Took part in today's session.",
       nextStep: 'Keep building on this next week.',
       praise: 'Thanks for your effort today, Kai!',
     });
@@ -66,5 +66,13 @@ describe('welfareFlags', () => {
       { playerId: 'c', kind: 'welfare', note: 'Player took a knock. Check in with their parent or carer.' },
     ]);
     expect(welfareFlags([], nameOf)).toEqual([]);
+  });
+});
+
+describe('textWelfareFlags', () => {
+  it('flags welfare words in free text, keeping the note on the phone', async () => {
+    const { textWelfareFlags } = await import('../../src/lib/chips');
+    const f = textWelfareFlags([note('a', [], 'Was quiet, said his dad moved out'), note('b', [], 'Great goal')], () => 'Theo');
+    expect(f).toEqual([{ playerId: 'a', kind: 'welfare', note: 'Theo: your note says "Was quiet, said his dad moved out". Worth following up.' }]);
   });
 });

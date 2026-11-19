@@ -1,5 +1,5 @@
 import { useEffect, useState } from 'preact/hooks';
-import { CloudDeleteError, deleteEverything, exportJson, nano, nanoProgress, online, sessions, settings, toast, updateSettings } from '../../data/store';
+import { CloudDeleteError, deleteEverything, hasDemo, importJson, removeDemo, exportJson, nano, nanoProgress, online, sessions, settings, toast, updateSettings } from '../../data/store';
 import { NANO_LABEL, nanoStatus } from '../../ai/availability';
 import { REMOTE_DEFAULTS, REPO_URL } from '../../ai/config';
 import { speechAvailability, installSpeech } from '../../ai/speech';
@@ -81,7 +81,7 @@ export function SettingsScreen() {
           <Switch id="cloud" label="Use cloud AI when it helps" checked={s.cloudAllowed} onChange={(v) => updateSettings({ cloudAllowed: v })}
             hint={`Parent updates, 4-week progress, and session notes when Gemini Nano isn't available. Names are always hidden first. Model: ${model}.`} />
           <Switch id="sync" label="Back up anonymised sessions" checked={s.syncEnabled} onChange={(v) => updateSettings({ syncEnabled: v })}
-            hint={`Copies of structured sessions with tokens instead of names, stored in Firestore under an anonymous sign-in.${synced ? ` ${synced} backed up so far.` : ''}`} />
+            hint={`Off by default. A copy of each structured session with codes instead of names, in Google Cloud Firestore. No account needed. Pauses while cloud AI is off.${synced ? ` ${synced} backed up so far.` : ''}`} />
         </section>
 
         <section class="card stack-sm" aria-labelledby="hide-h">
@@ -111,7 +111,13 @@ export function SettingsScreen() {
             {(voice === 'unavailable' || voice === 'unsupported') && "Off. Voice needs Chrome's on-device speech recognition, which isn't available here. Touchline doesn't use cloud speech, because children's names would leave the phone in the audio."}
           </p>
           {voice === 'downloadable' && (
-            <button class="btn btn-secondary" type="button" onClick={async () => { await installSpeech(); setVoice(await speechAvailability()); }}>
+            <button class="btn btn-secondary" type="button" onClick={async () => {
+              toast('Asking Chrome to set up on-device voice…');
+              const ok = await installSpeech();
+              const now = await speechAvailability();
+              setVoice(now);
+              toast(now === 'available' ? 'On-device voice is ready. Look for the mic in a player note.' : ok ? 'Chrome is downloading it. Try again in a minute.' : "Chrome couldn't set up on-device voice here.");
+            }}>
               <IconMic /> Enable on-device voice
             </button>
           )}
@@ -128,11 +134,39 @@ export function SettingsScreen() {
           </div>
         </section>
 
+        <section class="card stack-sm" aria-labelledby="how-h">
+          <h2 id="how-h" class="title">How Touchline uses AI</h2>
+          <ol class="stack-sm small" style={{ paddingLeft: '20px', margin: '0px' }}>
+            <li><strong>Names become codes first.</strong> On this phone, every squad name becomes a code like P03, and you're asked about any other names before anything is sent.</li>
+            <li><strong>Session notes: on the phone where possible.</strong> With Gemini Nano in Chrome, Firebase AI Logic structures notes on the device, even with no signal. Without it, the same request goes to Gemini in the cloud, still as codes.</li>
+            <li><strong>Parent updates and progress: in the cloud.</strong> Longer writing across weeks runs on a cloud Gemini model, with codes, back in signal.</li>
+            <li><strong>Names come back on the phone.</strong> Every result says where it ran, and "What the model saw" shows the exact text that was sent.</li>
+          </ol>
+        </section>
+
         <section class="card stack-sm" aria-labelledby="data-h">
           <h2 id="data-h" class="title">Your data</h2>
-          <p class="small muted">Everything lives on this phone. Export a copy any time, or wipe it.</p>
+          <p class="small muted">Your squad and notes live on this phone{s.syncEnabled ? ', with an anonymised backup in the cloud' : ''}. Export a copy any time, move it to a new phone with Import, or wipe it.</p>
           <div class="row wrap">
             <button class="btn btn-secondary" type="button" onClick={doExport}><IconDownload /> Export (JSON)</button>
+            <label class="btn btn-secondary" style={{ position: 'relative' }}>
+              Import
+              <input type="file" accept="application/json,.json" aria-label="Import a Touchline export file"
+                style={{ position: 'absolute', inset: '0px', opacity: 0, cursor: 'pointer' }}
+                onChange={async (e) => {
+                  const f = (e.target as HTMLInputElement).files?.[0];
+                  (e.target as HTMLInputElement).value = '';
+                  if (!f) return;
+                  if (!window.confirm('Replace everything on this phone with this file?')) return;
+                  try {
+                    const r = await importJson(await f.text());
+                    toast(`Imported ${r.players} players and ${r.sessions} sessions.`);
+                  } catch (err) {
+                    toast(err instanceof Error ? err.message : "Couldn't import that file.");
+                  }
+                }} />
+            </label>
+            {hasDemo.value && <button class="btn btn-secondary" type="button" onClick={async () => { await removeDemo(); toast('Demo squad removed.'); }}>Remove demo squad</button>}
             <button class="btn btn-danger" type="button" onClick={() => setConfirm(true)}><IconTrash /> Delete everything</button>
           </div>
         </section>

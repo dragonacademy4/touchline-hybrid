@@ -39,7 +39,7 @@ export function Welcome() {
           <p>Pitch-side notes that become praise, next steps and parent updates. Works with no signal.</p>
         </div>
       </section>
-      <section class="welcome-body">
+      <main class="welcome-body" style={{ maxWidth: 'none', padding: undefined }}>
         <div class="inner stack-lg">
           <div class="stack">
             <div class="promise">
@@ -91,7 +91,7 @@ export function Welcome() {
             Free and open source (Apache-2.0). <a href="#/privacy">How your data is handled</a>
           </p>
         </div>
-      </section>
+      </main>
     </div>
   );
 }

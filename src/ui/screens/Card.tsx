@@ -42,14 +42,10 @@ export async function renderCardPng(d: CardData): Promise<Blob> {
   // Pitch lines
   ctx.strokeStyle = 'rgba(245,243,236,0.16)';
   ctx.lineWidth = 6;
+  // One centre-circle arc in the top corner, clear of every line of text.
   ctx.beginPath();
-  ctx.arc(W - 40, 250, 230, 0, Math.PI * 2);
+  ctx.arc(W + 20, 80, 250, 0, Math.PI * 2);
   ctx.stroke();
-  ctx.beginPath();
-  ctx.moveTo(0, 250);
-  ctx.lineTo(W, 250);
-  ctx.stroke();
-  ctx.strokeRect(-10, H - 260, 420, 300);
   // Header
   ctx.fillStyle = 'rgba(245,243,236,0.85)';
   ctx.font = '700 34px "Atkinson Hyperlegible", sans-serif';
@@ -57,7 +53,7 @@ export async function renderCardPng(d: CardData): Promise<Blob> {
   if (d.focus) {
     ctx.fillStyle = 'rgba(245,243,236,0.9)';
     ctx.font = '600 56px "Barlow Condensed", sans-serif';
-    wrap(ctx, d.focus, W - 360).slice(0, 2).forEach((l, i) => ctx.fillText(l, 80, 196 + i * 60));
+    wrap(ctx, d.focus, W - 420).slice(0, 2).forEach((l, i) => ctx.fillText(l, 80, 196 + i * 60));
   }
   // Star
   ctx.fillStyle = '#e2b84f';
@@ -161,10 +157,10 @@ export function Card({ sessionId, playerId }: { sessionId: string; playerId: str
 
   return (
     <Shell title="Player card" backTo={{ name: 'review', id: sessionId }}>
-      <div class="stack" style={{ maxWidth: 440, margin: '0 auto' }}>
+      <div class="stack" style={{ maxWidth: '440px', margin: '0 auto' }}>
         <div class="pcard" role="img" aria-label={`Player card for ${player.name}: ${obs.praise} Next step: ${obs.nextStep}`}>
           <svg class="lines" viewBox="0 0 400 500" fill="none" stroke="#f5f3ec" stroke-width="2.5" aria-hidden="true" preserveAspectRatio="none">
-            <circle cx="385" cy="92" r="86" /><path d="M0 92h400" />
+            <circle cx="410" cy="30" r="96" />
           </svg>
           <div class="pc-top">
             <span class="pc-club">{session.group}</span>
@@ -181,17 +177,17 @@ export function Card({ sessionId, playerId }: { sessionId: string; playerId: str
         </div>
         <div class="stack-sm">
           <button class="btn btn-primary btn-lg btn-block" type="button" onClick={share} disabled={busy}>
-            <IconShare /> {canShareFiles ? 'Share card' : 'Save card'}
+            {canShareFiles ? <><IconShare /> Share card</> : <><IconDownload /> Download image</>}
           </button>
-          <div class="grid-2">
-            <button class="btn btn-secondary" type="button" disabled={busy} onClick={async () => {
+          <div class={canShareFiles ? 'grid-2' : ''}>
+            {canShareFiles && <button class="btn btn-secondary" style={{ width: '100%' }} type="button" disabled={busy} onClick={async () => {
               try {
                 download(await renderCardPng(data));
               } catch {
                 toast("Couldn't draw the card. Try again.");
               }
-            }}><IconDownload /> Download</button>
-            <button class="btn btn-secondary" type="button" onClick={copy}><IconCopy /> Copy text</button>
+            }}><IconDownload /> Download image</button>}
+            <button class="btn btn-secondary" style={{ width: '100%' }} type="button" onClick={copy}><IconCopy /> Copy text</button>
           </div>
           <p class="caption muted" style={{ textAlign: 'center' }}>The card is drawn on this phone. It only goes where you send it.</p>
         </div>

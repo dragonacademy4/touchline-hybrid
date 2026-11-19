@@ -3,7 +3,7 @@ import { conditions, players, saveSession, sessions, syncNow } from '../../data/
 import { shortDate } from '../../lib/dates';
 import type { PlayerObservation, Session } from '../../lib/types';
 import { planSessionRun } from '../../ai/engine';
-import { Banner, Empty, Peek, Sheet, Shell, SourceBadge } from '../components';
+import { Banner, Empty, Peek, Sheet, Shell, SourceBadge, flagLabel } from '../components';
 import { IconArrowUp, IconChevron, IconEdit, IconFlag, IconAlert, IconStar, IconCheckCircle, IconSparkle } from '../icons';
 import { href } from '../router';
 import { StructureSheet } from './Capture';
@@ -53,7 +53,7 @@ export function Review({ id }: { id: string }) {
 
         {st.summary && (
           <section class="card" aria-labelledby="sum-h">
-            <h2 id="sum-h" class="eyebrow" style={{ marginBottom: 6 }}>Session summary</h2>
+            <h2 id="sum-h" class="eyebrow" style={{ marginBottom: '6px' }}>Session summary</h2>
             <p>{st.summary}</p>
           </section>
         )}
@@ -64,7 +64,7 @@ export function Review({ id }: { id: string }) {
             {st.flags.map((f, i) => (
               <div key={i} class={`flag ${f.kind === 'welfare' ? 'flag-welfare' : ''}`}>
                 {f.kind === 'welfare' ? <IconAlert /> : <IconFlag />}
-                <span>{f.note}</span>
+                <span>{flagLabel(f, (id) => players.value.find((p) => p.id === id)?.name)}</span>
               </div>
             ))}
           </section>
@@ -78,9 +78,9 @@ export function Review({ id }: { id: string }) {
             <div class="stack-sm obs-grid">
               {obs.map((o) => (
                 <article key={o.playerId} class="card" aria-labelledby={`o-${o.playerId}`}>
-                  <div class="row-between" style={{ marginBottom: 10 }}>
+                  <div class="row-between" style={{ marginBottom: '10px' }}>
                     <h3 id={`o-${o.playerId}`} class="title">{nameOf(o.playerId)}</h3>
-                    <div class="row" style={{ gap: 4 }}>
+                    <div class="row" style={{ gap: '4px' }}>
                       <button class="icon-btn" type="button" aria-label={`Edit feedback for ${nameOf(o.playerId)}`} onClick={() => setEditing(o)}><IconEdit /></button>
                     </div>
                   </div>
@@ -89,7 +89,7 @@ export function Review({ id }: { id: string }) {
                     <div class="obs-item obs-next"><IconArrowUp /><div><div class="k">Next step</div>{o.nextStep}</div></div>
                     <div class="obs-item obs-praise"><IconStar /><div><div class="k">For the player</div>"{o.praise}"</div></div>
                   </div>
-                  <div class="row wrap" style={{ marginTop: 12, gap: 8 }}>
+                  <div class="row wrap" style={{ marginTop: '12px', gap: '8px' }}>
                     <a class="btn btn-secondary" href={href({ name: 'card', sessionId: session.id, playerId: o.playerId })}>Player card <IconChevron /></a>
                     {o.edited && <span class="badge badge-coach">Edited by you</span>}
                   </div>
@@ -138,7 +138,7 @@ function EditObservation(props: { session: Session; obs: PlayerObservation; name
   const field = (k: 'strength' | 'nextStep' | 'praise', label: string) => (
     <label class="field">
       <span>{label}</span>
-      <textarea class="textarea" style={{ minHeight: 80 }} value={o[k]} maxLength={400} required onInput={(e) => setO({ ...o, [k]: (e.target as HTMLTextAreaElement).value })} />
+      <textarea class="textarea" style={{ minHeight: '80px' }} value={o[k]} maxLength={400} required onInput={(e) => setO({ ...o, [k]: (e.target as HTMLTextAreaElement).value })} />
     </label>
   );
   return (

@@ -10,6 +10,8 @@ export interface Player {
   group: string;
   createdAt: number;
   archived?: boolean;
+  /** Name and notes erased; kept only so the token is never reused. */
+  erased?: boolean;
 }
 
 export interface PlayerNote {

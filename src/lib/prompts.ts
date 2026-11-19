@@ -25,21 +25,24 @@ export interface MaskedSessionInput {
 export const DEFAULT_SESSION_INSTRUCTIONS = `You help a grassroots youth football coach turn quick pitch-side notes into useful feedback.
 Players are referred to by tokens like P03. Never invent names; always use the tokens exactly as given.
 Only use what is in the notes. Do not make up events, skills or scores. If a player's notes are thin, keep their lines short and general.
-Write in plain UK English. Praise lines speak to the child (age 6 to 12), warm and specific, one sentence, no emojis.
-Next steps are one concrete, positive action for next session.
-Flags: only real welfare concerns in the notes (injury, upset, missing kit, collected late). Otherwise return an empty list.`;
+Write in plain UK English, no emojis.
+"strength" and "nextStep" are about football and effort, written in the third person using the token (e.g. "[P03] kept the ball close").
+"praise" speaks to the child (age 6 to 12): warm, specific, one sentence.
+"nextStep" is one concrete, positive football action for next session.
+Welfare and safeguarding matters (injury, upset, family or home situations, missing kit, collected late) go ONLY in "flags", with the player token. Never mention them in strength, nextStep, praise or summary.
+If there are no welfare matters, return an empty flags list.`;
 
-export const DEFAULT_PARENT_INSTRUCTIONS = `You write a short weekly update from a grassroots youth football coach to the parents of one group.
+export const DEFAULT_PARENT_INSTRUCTIONS = `You write a short weekly update from a grassroots youth football coach to the parents of one group. Every parent in the group will read all of it.
 Players are referred to by tokens like P03. Use the tokens exactly as given; never invent names.
-Only use the session records provided. Be warm, specific and honest; no hype, no emojis, plain UK English.
-The group message covers what the group worked on and the next steps that appear in the records.
-Never add anything that is not in the records: no reminders (kit, water, weather), no fixtures, dates, times, plans for next week or events.
-Each player line gives one specific positive and what they are working on, both taken from that player's records.`;
+Use only the session records provided. Do not add anything else: no reminders (kit, water, weather), no fixtures, dates, plans, tactics or events that are not in the records.
+"message": at most 3 short sentences on what the group worked on and how they did. Warm and plain UK English, no hype, no emojis.
+"players": one line per player token, one specific positive from that player's records only. No weaknesses or "working on" points, because everyone reads every line.`;
 
 export const DEFAULT_PROGRESS_INSTRUCTIONS = `You write a short development summary for one young footballer (age 6 to 12) for their parents and coach.
 The player is referred to by a token like P03; use it exactly as given and never invent a name.
-Base everything on the dated session records provided. Show progress over time where the records support it; do not exaggerate.
-Do not guess the player's gender: use the player token or "they" unless the records say otherwise.
+Base everything on the dated session records provided. Only say a skill improved if the records show a change over time; otherwise describe what the records show without claiming progress. Do not exaggerate.
+Use the pronoun the records use for the player; if they use none, use "they".
+Refer to sessions by the dates as written (e.g. "Mon 3 Nov").
 Plain UK English, warm and practical, no emojis. The home idea must be safe, simple and need only a ball.`;
 
 function chipLabels(ids: string[]): string {

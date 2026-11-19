@@ -44,7 +44,7 @@ export function PlayerScreen({ id }: { id: string }) {
         </div>
 
         <section aria-labelledby="prog-h" class="stack-sm">
-          <div class="section-head" style={{ marginTop: 8 }}><h2 id="prog-h">4-week progress</h2></div>
+          <div class="section-head" style={{ marginTop: '8px' }}><h2 id="prog-h">4-week progress</h2></div>
           {latest && <ReportView report={latest} onDelete={() => removeReport(latest.id)} />}
           {recentCount < 2 ? (
             <Banner tone="info" icon={<IconTrend />}>
@@ -53,7 +53,7 @@ export function PlayerScreen({ id }: { id: string }) {
           ) : blocked ? (
             <Banner tone="warn">{blocked}</Banner>
           ) : (
-            <button class="btn btn-cloud btn-block btn-lg" type="button" onClick={() => setRunning(true)}>
+            <button class="btn btn-primary btn-block btn-lg" type="button" onClick={() => setRunning(true)}>
               <IconEyeOff /> {latest ? 'Write a fresh progress report' : 'Write a 4-week progress report'}
             </button>
           )}
@@ -65,16 +65,16 @@ export function PlayerScreen({ id }: { id: string }) {
           {history.length === 0 ? (
             <p class="muted small">No feedback yet. Add a note in a session and it will appear here.</p>
           ) : (
-            <ol class="stack-sm" style={{ listStyle: 'none', padding: 0, margin: 0 }}>
+            <ol class="stack-sm" style={{ listStyle: 'none', padding: '0px', margin: '0px' }}>
               {history.map(({ s, o }) => (
                 <li key={s.id} class="card card-tight">
-                  <div class="row-between wrap" style={{ marginBottom: 6 }}>
+                  <div class="row-between wrap" style={{ marginBottom: '6px' }}>
                     <a href={href({ name: 'review', id: s.id })}><strong>{relativeDate(s.date, today)}</strong></a>
                     <SourceBadge source={s.structured!.source} />
                   </div>
                   <p class="small"><span class="muted">{s.focus || 'Training'}:</span> {o.strength}</p>
-                  <p class="small" style={{ marginTop: 4 }}><span class="muted">Next:</span> {o.nextStep}</p>
-                  <a class="small" style={{ display: 'inline-block', marginTop: 8, minHeight: 32 }} href={href({ name: 'card', sessionId: s.id, playerId: id })}>Player card</a>
+                  <p class="small" style={{ marginTop: '4px' }}><span class="muted">Next:</span> {o.nextStep}</p>
+                  <a class="small" style={{ display: 'inline-block', marginTop: '8px', minHeight: '32px' }} href={href({ name: 'card', sessionId: s.id, playerId: id })}>Player card</a>
                 </li>
               ))}
             </ol>
@@ -83,7 +83,7 @@ export function PlayerScreen({ id }: { id: string }) {
       </div>
       {running && (
         <CloudRunSheet title="4-week progress" involved={[player]}
-          job={(run, prompts, c) => progressReport(player, today, sessions.value, players.value, settings.value, c, run, prompts)}
+          job={(run, prompts, c, confirm) => progressReport(player, today, sessions.value, players.value, settings.value, c, run, prompts, confirm)}
           onDone={() => setRunning(false)} onClose={() => setRunning(false)} />
       )}
       {editing && <PlayerSheet player={player} onClose={() => setEditing(false)} />}

@@ -154,6 +154,36 @@ export async function removePlayer(id: string): Promise<'archived' | 'deleted'> 
   return 'deleted';
 }
 
+/**
+ * Removes a child and erases everything about them: notes, feedback and flags
+ * in every session, reports about them, and their lines in parent updates.
+ * Backed-up sessions are re-sent without them. The token is not reused.
+ */
+export async function erasePlayer(id: string) {
+  const p = players.value.find((x) => x.id === id);
+  if (!p) return;
+  for (const s of sessions.value) {
+    const involved = s.attendees.includes(id) || s.notes.some((n) => n.playerId === id) || s.structured?.observations.some((o) => o.playerId === id) || s.structured?.flags.some((f) => f.playerId === id);
+    if (!involved) continue;
+    await saveSession({
+      ...s,
+      attendees: s.attendees.filter((x) => x !== id),
+      notes: s.notes.filter((n) => n.playerId !== id),
+      structured: s.structured && {
+        ...s.structured,
+        observations: s.structured.observations.filter((o) => o.playerId !== id),
+        flags: s.structured.flags.filter((f) => f.playerId !== id),
+      },
+    });
+  }
+  for (const r of reports.value) {
+    if (r.subject === id) await removeReport(r.id);
+    else if (r.items.some((i) => i.playerId === id)) await saveReport({ ...r, items: r.items.filter((i) => i.playerId !== id) });
+  }
+  await store.putPlayer({ ...p, name: 'Removed player', aliases: [], archived: true, erased: true });
+  players.value = players.value.map((x) => (x.id === id ? { ...p, name: 'Removed player', aliases: [], archived: true, erased: true } : x));
+}
+
 export async function restorePlayer(p: Player) {
   const restored = { ...p, archived: false };
   await store.putPlayer(restored);
@@ -234,7 +264,8 @@ export async function removeReport(id: string) {
 // ---------- Sync ----------
 
 export async function syncNow() {
-  if (!online.value || !settings.value.syncEnabled) return;
+  // Backup is a cloud feature too: it stops when the coach switches cloud off.
+  if (!online.value || !settings.value.syncEnabled || !settings.value.cloudAllowed) return;
   const { syncSessions } = await import('../sync/sync');
   const res = await syncSessions(sessions.value, players.value, settings.value, async (sessionId, sentUpdatedAt) => {
     const s = sessions.value.find((x) => x.id === sessionId);
@@ -248,6 +279,47 @@ export async function syncNow() {
 }
 
 // ---------- Data controls ----------
+
+/** Removes the fictional demo squad, its sessions and reports about them. Your own data stays. */
+export async function removeDemo() {
+  const demoPlayers = new Set(players.value.filter((p) => p.id.startsWith('demo-')).map((p) => p.id));
+  const doomedReports = reports.value.filter(
+    (r) => demoPlayers.has(r.subject) || (r.kind === 'parent_update' && r.items.length > 0 && r.items.every((i) => i.playerId && demoPlayers.has(i.playerId))),
+  );
+  for (const id of demoPlayers) await store.deletePlayer(id);
+  for (const s of sessions.value.filter((x) => x.demo)) await store.deleteSession(s.id);
+  for (const r of doomedReports) await store.deleteReport(r.id);
+  players.value = players.value.filter((p) => !demoPlayers.has(p.id));
+  sessions.value = sessions.value.filter((x) => !x.demo);
+  reports.value = reports.value.filter((r) => !doomedReports.includes(r));
+}
+
+export const hasDemo = computed(() => players.value.some((p) => p.id.startsWith('demo-')) || sessions.value.some((s) => s.demo));
+
+/** Restores a file made by Export, replacing what's on this phone. Throws a readable Error if the file isn't one. */
+export async function importJson(text: string): Promise<{ players: number; sessions: number }> {
+  let data: { app?: string; players?: Player[]; sessions?: Session[]; reports?: CloudReport[]; settings?: Partial<Settings> };
+  try {
+    data = JSON.parse(text);
+  } catch {
+    throw new Error("That file isn't a Touchline export.");
+  }
+  const ok = data?.app === 'touchline' && Array.isArray(data.players) && Array.isArray(data.sessions)
+    && data.players.every((p) => typeof p?.id === 'string' && typeof p?.name === 'string' && /^P\d{2,4}$/.test(p?.token ?? ''))
+    && data.sessions.every((x) => typeof x?.id === 'string' && /^\d{4}-\d{2}-\d{2}$/.test(x?.date ?? '') && Array.isArray(x?.notes));
+  if (!ok) throw new Error("That file isn't a Touchline export.");
+  await store.clearAll();
+  await store.putMany(data.players!, data.sessions!);
+  for (const r of data.reports ?? []) await store.putReport(r);
+  const nextToken = Math.max(1, ...data.players!.map((p) => Number(p.token.slice(1)) + 1));
+  const merged = { ...DEFAULT_SETTINGS, ...(data.settings ?? {}), onboarded: true, nextToken: Math.max(nextToken, data.settings?.nextToken ?? 1) };
+  await store.putSettings(merged);
+  players.value = data.players!;
+  sessions.value = data.sessions!;
+  reports.value = data.reports ?? [];
+  settings.value = merged;
+  return { players: data.players!.length, sessions: data.sessions!.length };
+}
 
 export function exportJson(): string {
   return JSON.stringify(

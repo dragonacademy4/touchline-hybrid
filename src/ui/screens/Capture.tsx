@@ -9,6 +9,8 @@ import { speechAvailability, startDictation } from '../../ai/speech';
 import { Banner, Empty, Fold, Sheet, Shell, Spinner } from '../components';
 import { IconCheck, IconCheckCircle, IconCloud, IconEdit, IconEyeOff, IconMic, IconPhone, IconTag, IconTrash } from '../icons';
 import { navigate } from '../router';
+import { useSendCheck } from '../sendCheck';
+import { SendCancelled } from '../../ai/engine';
 
 const KIND_LABEL: Record<ChipKind, string> = { strength: 'Did well', work_on: 'Work on', welfare: 'Welfare' };
 
@@ -75,7 +77,7 @@ export function Capture({ id }: { id: string }) {
         )}
 
         <section aria-labelledby="players-h">
-          <div class="row-between" style={{ marginBottom: 8 }}>
+          <div class="row-between" style={{ marginBottom: '8px' }}>
             <h2 id="players-h" class="eyebrow">Players</h2>
             <span class="small muted num" aria-live="polite">{noted.length} of {present.length} noted</span>
           </div>
@@ -87,11 +89,13 @@ export function Capture({ id }: { id: string }) {
                 const n = noteOf(p.id);
                 const isPresent = session.attendees.includes(p.id);
                 const count = (n?.chips.length ?? 0) + (n?.text.trim() ? 1 : 0);
+                // The accessible name matches the visible text: "Kai: Tap to add".
+                const meta = !isPresent ? 'Not here today' : hasNote(n) ? `${count} note${count === 1 ? '' : 's'}` : 'Tap to add';
                 return (
                   <button key={p.id} type="button" class={`player-tile ${hasNote(n) ? 'has-note' : ''} ${isPresent ? '' : 'absent'}`}
-                    onClick={() => setEditing(p.id)} aria-label={`${p.name}: ${!isPresent ? 'not here' : hasNote(n) ? `${count} note${count === 1 ? '' : 's'}` : 'no notes yet'}`}>
+                    onClick={() => setEditing(p.id)} aria-label={`${p.name}: ${meta}`}>
                     <span class="name">{p.name}</span>
-                    <span class="meta">{!isPresent ? 'Not here today' : hasNote(n) ? `${count} note${count === 1 ? '' : 's'}` : 'Tap to add'}</span>
+                    <span class="meta">{meta}</span>
                     {hasNote(n) && <IconCheckCircle class="tick" />}
                   </button>
                 );
@@ -106,7 +110,7 @@ export function Capture({ id }: { id: string }) {
             onInput={(e) => setGeneral((e.target as HTMLTextAreaElement).value)} onBlur={saveGeneral} onChange={saveGeneral} />
         </label>
 
-        <div class="stack-sm" style={{ position: 'sticky', bottom: 0, padding: '12px 0 calc(12px + env(safe-area-inset-bottom))', background: 'linear-gradient(transparent, var(--ground) 25%)' }}>
+        <div class="stack-sm" style={{ position: 'sticky', bottom: '0px', padding: '12px 0 calc(12px + env(safe-area-inset-bottom))', background: 'linear-gradient(transparent, var(--ground) 25%)' }}>
           <button class="btn btn-primary btn-lg btn-block" type="button" disabled={noted.length === 0 && !general.trim()}
             onClick={async () => { await saveGeneral(); setStructuring(true); }}>
             {cta.icon} {cta.label}
@@ -216,7 +220,7 @@ function NoteSheet(props: { session: Session; player: Player; squad: Player[]; o
         <label class="field">
           <span>Anything else?</span>
           <div style={{ position: 'relative' }}>
-            <textarea class="textarea" spellcheck={false} value={text} maxLength={600} placeholder={`e.g. Scored with his left foot, much braver in the tackle`}
+            <textarea class="textarea" spellcheck={false} value={text} maxLength={600} placeholder="e.g. Scored with the weaker foot, much braver in the tackle"
               onInput={(e) => { setText((e.target as HTMLTextAreaElement).value); if (!present) setPresent(true); }} />
           </div>
           <span class="hint">Write names freely. They're hidden before any AI sees this.</span>
@@ -226,7 +230,7 @@ function NoteSheet(props: { session: Session; player: Player; squad: Player[]; o
             <IconMic /> {voice === 'listening' ? 'Listening on this phone… tap to stop' : 'Speak a note (on this phone)'}
           </button>
         )}
-        <label class="switch-row" style={{ minHeight: 48 }}>
+        <label class="switch-row" style={{ minHeight: '48px' }}>
           <span><strong>Here today</strong></span>
           <span class="switch">
             <input type="checkbox" role="switch" checked={present} onChange={(e) => setPresent((e.target as HTMLInputElement).checked)} />
@@ -274,6 +278,7 @@ export function StructureSheet({ session, onClose }: { session: Session; onClose
   const [attempt, setAttempt] = useState(0);
   const notedPlayers = players.value.filter((p) => session.notes.some((n) => n.playerId === p.id && hasNote(n)));
   const pairs = notedPlayers.map((p) => ({ name: p.name, token: p.token }));
+  const check = useSendCheck();
 
   useEffect(() => {
     let live = true;
@@ -291,7 +296,7 @@ export function StructureSheet({ session, onClose }: { session: Session; onClose
         await new Promise((r) => setTimeout(r, 900)); // let the coach see the names fold
         if (!live) return;
         setStep('run');
-        const structured = await structureSession(session, players.value, settings.value, conditions.value, run, prompts);
+        const structured = await structureSession(session, players.value, settings.value, conditions.value, run, prompts, check.confirm);
         if (!live) return;
         setStep('restore');
         await new Promise((r) => setTimeout(r, Math.max(0, 1500 - (Date.now() - started)) + 350));
@@ -300,6 +305,7 @@ export function StructureSheet({ session, onClose }: { session: Session; onClose
         setStep('done');
         navigate({ name: 'review', id: session.id }, true);
       } catch (e) {
+        if (e instanceof SendCancelled) return onClose();
         console.warn('Structuring failed:', e instanceof Error ? e.name : 'error');
         if (live) setError(friendlyError(e));
       }
@@ -329,6 +335,8 @@ export function StructureSheet({ session, onClose }: { session: Session; onClose
       ) : undefined}>
       {error ? (
         <Banner tone="danger">{error.detail}</Banner>
+      ) : check.panel ? (
+        check.panel
       ) : (
         <div class="stack">
           {pairs.length > 0 && <Fold pairs={pairs} play />}
@@ -337,7 +345,7 @@ export function StructureSheet({ session, onClose }: { session: Session; onClose
               const state = order.indexOf(step) > order.indexOf(s.id) ? 'done' : step === s.id ? 'active' : '';
               return (
                 <li key={s.id} class={state}>
-                  {state === 'done' ? <IconCheck style={{ color: 'var(--device)' }} /> : state === 'active' ? <Spinner /> : <span style={{ width: 18 }} />}
+                  {state === 'done' ? <IconCheck style={{ color: 'var(--device)' }} /> : state === 'active' ? <Spinner /> : <span style={{ width: '18px' }} />}
                   {s.label}
                 </li>
               );

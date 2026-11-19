@@ -31,6 +31,10 @@ export function friendlyError(e: unknown): FriendlyError {
   // request URL (".../models/x:generateContent") in the message, so match on the status
   // and specific phrases, not on "fetch-error" or a bare "rate".
   if (/offline|network|failed to fetch|ERR_INTERNET/i.test(msg)) {
+    // The phone says it's online, so the AI service itself couldn't be reached.
+    if (typeof navigator !== 'undefined' && navigator.onLine === true) {
+      return { kind: 'offline', title: "Couldn't reach the AI service", detail: 'Your notes are saved on this phone. Try again in a moment, or save without AI.', retry: true };
+    }
     return { kind: 'offline', title: 'No signal', detail: 'Your notes are saved on this phone. Try again when you have signal.', retry: true };
   }
   if (/AbortError|timeout has expired|timed out/i.test(msg)) {

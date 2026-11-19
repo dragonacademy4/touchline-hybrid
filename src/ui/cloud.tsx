@@ -2,19 +2,22 @@
 import { useEffect, useState } from 'preact/hooks';
 import { conditions, getRunner, getPrompts, players, saveReport, settings, toast } from '../data/store';
 import { NotEnoughData } from '../ai/engine';
-import type { Conditions, ModelRunner, Prompts } from '../ai/engine';
+import type { Conditions, ConfirmSend, ModelRunner, Prompts } from '../ai/engine';
+import { SendCancelled } from '../ai/engine';
+import { useSendCheck } from './sendCheck';
 import { friendlyError, type FriendlyError } from '../ai/errors';
 import type { CloudReport, Player } from '../lib/types';
 import { Banner, Fold, Peek, Sheet, SourceBadge, Spinner } from './components';
 import { IconCheck, IconChevron, IconCopy, IconTrash } from './icons';
 
-type Job = (run: ModelRunner, prompts: Prompts, c: Conditions) => Promise<CloudReport>;
+type Job = (run: ModelRunner, prompts: Prompts, c: Conditions, confirm: ConfirmSend) => Promise<CloudReport>;
 
 export function CloudRunSheet(props: { title: string; involved: Player[]; job: Job; onDone: (r: CloudReport) => void; onClose: () => void }) {
   const [step, setStep] = useState<'mask' | 'run' | 'restore'>('mask');
   const [error, setError] = useState<FriendlyError | null>(null);
   const [attempt, setAttempt] = useState(0);
   const pairs = props.involved.map((p) => ({ name: p.name, token: p.token }));
+  const check = useSendCheck();
 
   useEffect(() => {
     let live = true;
@@ -26,13 +29,14 @@ export function CloudRunSheet(props: { title: string; involved: Player[]; job: J
         await new Promise((r) => setTimeout(r, 900));
         if (!live) return;
         setStep('run');
-        const report = await props.job(run, prompts, conditions.value);
+        const report = await props.job(run, prompts, conditions.value, check.confirm);
         if (!live) return;
         setStep('restore');
         await new Promise((r) => setTimeout(r, 450));
         await saveReport(report);
         if (live) props.onDone(report);
       } catch (e) {
+        if (e instanceof SendCancelled) return props.onClose();
         console.warn('Cloud report failed:', e instanceof Error ? e.name : 'error');
         if (!live) return;
         if (e instanceof NotEnoughData) setError({ kind: 'unknown', title: 'Not enough notes yet', detail: e.message, retry: false });
@@ -55,6 +59,8 @@ export function CloudRunSheet(props: { title: string; involved: Player[]; job: J
       actions={error?.retry ? <button class="btn btn-primary btn-block" type="button" onClick={() => setAttempt((a) => a + 1)}>Try again</button> : undefined}>
       {error ? (
         <Banner tone={error.kind === 'unknown' && !error.retry ? 'info' : 'danger'}>{error.detail}</Banner>
+      ) : check.panel ? (
+        check.panel
       ) : (
         <div class="stack">
           <Fold pairs={pairs} play />
@@ -63,7 +69,7 @@ export function CloudRunSheet(props: { title: string; involved: Player[]; job: J
               const state = order.indexOf(step) > order.indexOf(s.id) ? 'done' : step === s.id ? 'active' : '';
               return (
                 <li key={s.id} class={state}>
-                  {state === 'done' ? <IconCheck style={{ color: 'var(--device)' }} /> : state === 'active' ? <Spinner /> : <span style={{ width: 18 }} />}
+                  {state === 'done' ? <IconCheck style={{ color: 'var(--device)' }} /> : state === 'active' ? <Spinner /> : <span style={{ width: '18px' }} />}
                   {s.label}
                 </li>
               );
@@ -95,7 +101,7 @@ export function ReportView({ report, onDelete }: { report: CloudReport; onDelete
       <h3 class="title">{report.title}</h3>
       <p style={{ whiteSpace: 'pre-line' }}>{report.body}</p>
       {report.items.length > 0 && (
-        <ul class="stack-sm" style={{ paddingLeft: 18, margin: 0 }}>
+        <ul class="stack-sm" style={{ paddingLeft: '18px', margin: '0px' }}>
           {report.items.map((i, k) => (
             <li key={k}>{i.playerId ? <><strong>{nameOf(i.playerId) ?? 'Player'}:</strong> {i.text}</> : i.text}</li>
           ))}
