@@ -33,7 +33,7 @@ export function CloudRunSheet(props: { title: string; involved: Player[]; job: J
         await saveReport(report);
         if (live) props.onDone(report);
       } catch (e) {
-        console.warn('Cloud report failed', e);
+        console.warn('Cloud report failed:', e instanceof Error ? e.name : 'error');
         if (!live) return;
         if (e instanceof NotEnoughData) setError({ kind: 'unknown', title: 'Not enough notes yet', detail: e.message, retry: false });
         else setError(friendlyError(e));

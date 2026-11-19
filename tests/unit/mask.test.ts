@@ -215,3 +215,27 @@ describe('owner decisions (19 Nov)', () => {
     expect(mm.unmask(r.text, r.restore)).toBe('Use pitch #P02 next week');
   });
 });
+
+describe('review fix C1: parts of multi-word names', () => {
+  const mm = createMasker({ members: [{ token: 'P01', name: 'Ollie S' }, { token: 'P02', name: 'Sam B' }, { token: 'P03', name: 'Sam K' }, { token: 'P04', name: 'Mary-Jane' }] });
+  it('hides a first name typed without the initial', () => {
+    expect(mm.mask('Ollie was brilliant, Ollie S too').text).toBe('[P01] was brilliant, [P01] too');
+  });
+  it('a first name shared by two children becomes ambiguous, full names stay exact', () => {
+    expect(mm.mask('Sam passed to Sam K').text).toBe('[A1] passed to [P03]');
+  });
+  it('hides each part of a hyphenated name', () => {
+    expect(mm.mask('Jane and Mary').text).toBe('[P04] and [P04]');
+  });
+  it('the leak check catches a bare first name', () => {
+    expect(mm.findLeaks('great pass to Ollie')).toEqual(['Ollie']);
+  });
+  it('two-letter word names are only hidden when capitalised', () => {
+    const m2 = createMasker({ members: [{ token: 'P01', name: 'An' }] });
+    expect(m2.mask('An scored, return an empty list').text).toBe('[P01] scored, return an empty list');
+  });
+  it('supports four-digit tokens', () => {
+    const m3 = createMasker({ members: [{ token: 'P1000', name: 'Ffion' }] });
+    expect(m3.unmask(m3.mask('Ffion').text)).toBe('Ffion');
+  });
+});

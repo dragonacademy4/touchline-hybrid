@@ -60,7 +60,7 @@ export async function putSettings(s: Settings) {
   await (await db()).put('meta', s, 'settings');
 }
 
-/** Bulk write in one transaction (demo load, import). */
+/** Bulk write in one transaction (demo load). */
 export async function putMany(players: Player[], sessions: Session[]) {
   const d = await db();
   const tx = d.transaction(['players', 'sessions'], 'readwrite');

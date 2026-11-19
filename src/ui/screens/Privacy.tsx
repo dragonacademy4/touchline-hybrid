@@ -13,17 +13,18 @@ export function Privacy() {
         <p>Where Chrome's built-in Gemini Nano is available, session notes are structured on the phone itself. Nothing is sent anywhere for that step.</p>
 
         <h2 class="title">AI in the cloud (Google Gemini)</h2>
-        <p>Weekly parent updates, 4-week progress reports, and session notes on devices without Gemini Nano are written by a Google Gemini model through Firebase AI Logic. Before anything is sent, Touchline replaces every squad name and nickname with a code such as P03, and hides any extra words you list in Settings, plus email addresses and phone numbers. If a name is still found in the text, nothing is sent. The list that links codes to names never leaves the phone. Every cloud result has a "What the cloud saw" panel showing the exact text sent.</p>
+        <p>Weekly parent updates, 4-week progress reports, and session notes on devices without Gemini Nano are written by a Google Gemini model through Firebase AI Logic. This is on by default; you can switch it off in Settings. Before anything is sent, Touchline replaces the squad's names and nicknames (and each part of a name, so "Ollie" is hidden for "Ollie S") with a code such as P03, and hides any extra words you list in Settings, plus email addresses and phone numbers. A final check looks for those names again, and if one is still there, nothing is sent. The list that links codes to names never leaves the phone. Every cloud result has a "What the cloud saw" panel showing the exact text sent.</p>
+        <p>What it can't catch: spellings Touchline hasn't been told about (write "Olly" for "Ollie" and it won't recognise it, so add common spellings as nicknames), names of people who aren't in your squad or hidden-words list, and names that are also everyday words (Will, Mark, Max, Grace…) when written in lowercase, because "he will need to" has to stay readable. Check "What the cloud saw" if you're unsure.</p>
         <p>Touchline uses Google's free tier for this, under which Google may use submitted text to improve its products. That is one more reason names are removed first.</p>
 
         <h2 class="title">Anonymised backups (Firestore)</h2>
-        <p>If "Back up anonymised sessions" is on, a copy of each structured session is saved in Google Cloud Firestore (London region) under an anonymous sign-in. The copy holds the date, group, focus and feedback with codes instead of names. It can't be linked back to a child without your phone. "Delete everything" removes these copies too.</p>
+        <p>Off unless you turn it on (on the first screen or in Settings). When on, a copy of each structured session is saved in Google Cloud Firestore under an anonymous sign-in. The copy holds the date, group, focus and feedback with codes instead of names; it can't be linked back to a child without your phone. Deleting a session deletes its copy. "Delete everything" deletes every copy on the server and the anonymous sign-in itself, and won't run without signal, so nothing is left behind.</p>
 
         <h2 class="title">Keeping the service safe</h2>
-        <p>Firebase App Check with Google reCAPTCHA v3 checks that requests come from the real Touchline app. reCAPTCHA collects information about your browser and device for this, under Google's privacy policy. Firebase Remote Config fetches app settings such as which cloud model to use.</p>
+        <p>Firebase App Check with Google reCAPTCHA Enterprise checks that requests come from the real Touchline app. reCAPTCHA collects information about your browser and device for this, under Google's privacy policy. Firebase Remote Config fetches app settings such as which cloud model to use.</p>
 
         <h2 class="title">What Touchline doesn't do</h2>
-        <p>No analytics, no advertising, no tracking cookies, no accounts, no cloud speech recognition. Voice notes only work where Chrome recognises speech on the device.</p>
+        <p>No analytics, no advertising, no tracking cookies, no accounts, no cloud speech recognition. Voice notes only work where Chrome recognises speech on the device. Spell check is turned off in the note and name boxes, because Chrome's enhanced spell check sends typed text to Google. Children's names are kept out of page titles, which browsers store in history.</p>
 
         <h2 class="title">For coaches</h2>
         <p>Touchline is for coaches, not children. Follow your club's safeguarding and data policy for player notes, and share cards and updates only with the child's parents or carers.</p>

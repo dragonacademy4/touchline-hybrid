@@ -184,7 +184,13 @@ export function Card({ sessionId, playerId }: { sessionId: string; playerId: str
             <IconShare /> {canShareFiles ? 'Share card' : 'Save card'}
           </button>
           <div class="grid-2">
-            <button class="btn btn-secondary" type="button" disabled={busy} onClick={async () => download(await renderCardPng(data))}><IconDownload /> Download</button>
+            <button class="btn btn-secondary" type="button" disabled={busy} onClick={async () => {
+              try {
+                download(await renderCardPng(data));
+              } catch {
+                toast("Couldn't draw the card. Try again.");
+              }
+            }}><IconDownload /> Download</button>
             <button class="btn btn-secondary" type="button" onClick={copy}><IconCopy /> Copy text</button>
           </div>
           <p class="caption muted" style={{ textAlign: 'center' }}>The card is drawn on this phone. It only goes where you send it.</p>

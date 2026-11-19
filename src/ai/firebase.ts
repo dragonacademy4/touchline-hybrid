@@ -89,6 +89,8 @@ export async function remotePrompts(): Promise<Prompts> {
 
 /** A cloud call that takes longer than this is abandoned (and the fallback model tried). */
 const CLOUD_TIMEOUT_MS = 25_000;
+/** Gemini Nano can be slow on modest hardware, so it gets longer. */
+const ON_DEVICE_TIMEOUT_MS = 90_000;
 
 const LANG = [{ type: 'text', languages: ['en'] }] as const;
 
@@ -117,7 +119,11 @@ export const firebaseRunner: ModelRunner = async (req) => {
   const fallback = await remoteValue('cloud_model_fallback');
   const attempt = async (cloudModel: string): Promise<RunResult> => {
     const model = await makeModel(req, cloudModel);
-    const result = await model.generateContent(req.prompt);
+    // The SDK's timeout covers cloud calls only; this also bounds an on-device call that never returns.
+    const result = await Promise.race([
+      model.generateContent(req.prompt),
+      new Promise<never>((_, rej) => setTimeout(() => rej(Object.assign(new Error('Timeout has expired.'), { name: 'AbortError' })), ON_DEVICE_TIMEOUT_MS)),
+    ]);
     const source = result.response.inferenceSource === 'on_device' ? 'on_device' : 'in_cloud';
     return { text: result.response.text(), source, model: source === 'on_device' ? 'Gemini Nano' : cloudModel };
   };
@@ -161,4 +167,12 @@ export function getDb() {
   })();
   dbPromise.catch(() => (dbPromise = null));
   return dbPromise;
+}
+
+/** Deletes the anonymous account (after its data is gone) so a fresh start gets a fresh identity. */
+export async function signOutAndForget(): Promise<void> {
+  const [{ getAuth, deleteUser, signOut }, app] = await Promise.all([import('firebase/auth'), getFirebaseApp()]);
+  const auth = getAuth(app);
+  if (auth.currentUser) await deleteUser(auth.currentUser).catch(() => signOut(auth));
+  dbPromise = null;
 }

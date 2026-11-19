@@ -1,7 +1,7 @@
 import AxeBuilder from '@axe-core/playwright';
-import { addNote, bodiesWithNames, expect, mockFirebase, startDemo, startSession, test } from './fixtures';
+import { addNote, bodiesWithNames, expect, mockFirebase, startDemo, startSession, test, QA } from './fixtures';
 
-const shotDir = '../qa/e2e';
+const shotDir = `${QA}/e2e`;
 
 test('main journey with the cloud fallback: capture, structure, card, parent update, progress', async ({ page, consoleErrors }, info) => {
   const w = info.project.name;

@@ -180,21 +180,37 @@ export async function createSession(group: string, focus = ''): Promise<Session>
   return session;
 }
 
+let syncTimer: ReturnType<typeof setTimeout> | undefined;
+/** Sync soon after a change to a structured session (edits included), batched. */
+function scheduleSync() {
+  clearTimeout(syncTimer);
+  syncTimer = setTimeout(() => void syncNow(), 1500);
+}
+
 export async function saveSession(s: Session) {
   const next = { ...s, updatedAt: Date.now() };
   sessions.value = sessions.value.map((x) => (x.id === s.id ? next : x));
   await store.putSession(next);
+  if (next.structured && !next.demo) scheduleSync();
   return next;
 }
 
 export async function removeSession(id: string) {
+  const s = sessions.value.find((x) => x.id === id);
   await store.deleteSession(id);
-  sessions.value = sessions.value.filter((s) => s.id !== id);
+  sessions.value = sessions.value.filter((x) => x.id !== id);
+  if (s?.syncedAt) {
+    const { deleteCloudCopy } = await import('../sync/sync');
+    void deleteCloudCopy(id);
+  }
 }
 
 export async function restoreSession(s: Session) {
-  await store.putSession(s);
-  sessions.value = [...sessions.value.filter((x) => x.id !== s.id), s];
+  // The cloud copy was deleted with the session, so send it again.
+  const restored = { ...s, syncedAt: undefined };
+  await store.putSession(restored);
+  sessions.value = [...sessions.value.filter((x) => x.id !== s.id), restored];
+  if (restored.structured && !restored.demo) scheduleSync();
 }
 
 export async function setStructured(id: string, structured: StructuredSession) {
@@ -220,9 +236,10 @@ export async function removeReport(id: string) {
 export async function syncNow() {
   if (!online.value || !settings.value.syncEnabled) return;
   const { syncSessions } = await import('../sync/sync');
-  const res = await syncSessions(sessions.value, players.value, settings.value, async (sessionId) => {
+  const res = await syncSessions(sessions.value, players.value, settings.value, async (sessionId, sentUpdatedAt) => {
     const s = sessions.value.find((x) => x.id === sessionId);
-    if (!s) return;
+    // Edited while the write was in flight: leave it pending so the newer version is sent.
+    if (!s || s.updatedAt !== sentUpdatedAt) return;
     const next = { ...s, syncedAt: Date.now() };
     sessions.value = sessions.value.map((x) => (x.id === sessionId ? next : x));
     await store.putSession(next);
@@ -240,14 +257,28 @@ export function exportJson(): string {
   );
 }
 
+export class CloudDeleteError extends Error {
+  constructor(public readonly reason: 'offline' | 'failed') {
+    super(reason);
+    this.name = 'CloudDeleteError';
+  }
+}
+
+/**
+ * Deletes everything on this phone and, if backup was ever used, every
+ * anonymised copy in Firestore first. If the backup can't be reached, nothing
+ * is deleted and the coach is told why (no silent half-delete).
+ */
 export async function deleteEverything() {
-  const ids = sessions.value.filter((s) => s.syncedAt).map((s) => s.id);
-  if (ids.length && online.value) {
+  const everBackedUp = settings.value.syncEnabled || sessions.value.some((s) => s.syncedAt);
+  if (everBackedUp) {
+    if (!online.value) throw new CloudDeleteError('offline');
     try {
-      const { deleteCloudCopies } = await import('../sync/sync');
-      await deleteCloudCopies(ids);
+      const { deleteAllCloudCopies } = await import('../sync/sync');
+      await deleteAllCloudCopies();
     } catch (e) {
-      console.warn('Could not delete cloud copies', e);
+      console.warn('Cloud delete failed:', e instanceof Error ? e.name : 'error');
+      throw new CloudDeleteError('failed');
     }
   }
   await store.clearAll();

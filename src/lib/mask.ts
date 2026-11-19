@@ -67,7 +67,7 @@ export interface MaskResult {
   restore: Record<string, string>;
 }
 
-const PLAYER_TOKEN_RE = /^P\d{2,3}$/;
+const PLAYER_TOKEN_RE = /^P\d{2,4}$/;
 const MIN_TERM_LENGTH = 2;
 
 /** Letters and combining marks continue a word; digits and punctuation end it. */
@@ -157,12 +157,13 @@ interface Term {
 
 function buildTerms(opts: MaskOptions): Term[] {
   const byFolded = new Map<string, Term>();
-  const add = (raw: string, token: string | null) => {
+  const add = (raw: string, token: string | null, part = false) => {
     const base = foldTerm(raw);
     // "Mary-Jane" is also typed "Mary Jane" or "MaryJane"; "O'Neill" as "O Neill" or "ONeill".
-    for (const v of new Set([base, base.replace(/[-']/g, ' '), base.replace(/[-']/g, '')])) addFolded(v, token);
+    for (const v of new Set([base, base.replace(/[-']/g, ' '), base.replace(/[-']/g, '')])) addFolded(v, token, part);
   };
-  const addFolded = (folded: string, token: string | null) => {
+  const partTokens = new Map<string, Set<string>>();
+  const addFolded = (folded: string, token: string | null, part: boolean) => {
     if ([...folded].length < MIN_TERM_LENGTH || !/[\p{L}\p{N}]/u.test(folded)) return;
     let term = byFolded.get(folded);
     if (!term) {
@@ -174,12 +175,23 @@ function buildTerms(opts: MaskOptions): Term[] {
       };
       byFolded.set(folded, term);
     }
-    if (token) term.tokens.add(token);
+    if (token && part) partTokens.set(folded, (partTokens.get(folded) ?? new Set()).add(token));
+    else if (token) term.tokens.add(token);
     else term.extra = true;
   };
   for (const m of opts.members) {
-    add(m.name, m.token);
-    for (const a of m.aliases ?? []) add(a, m.token);
+    for (const n of [m.name, ...(m.aliases ?? [])]) {
+      add(n, m.token);
+      // "Ollie S" or "Mary-Jane": each part of a name identifies the child on its own too.
+      // A part shared by two children ("Sam B", "Sam K") becomes an ambiguous token.
+      const parts = n.trim().split(/[\s\-\u2010-\u2014]+/).filter(Boolean);
+      if (parts.length > 1) for (const part of parts) add(part, m.token, true);
+    }
+  }
+  // A child's own name or nickname beats a part of someone else's ("Mary" vs "Mary-Jane").
+  for (const [folded, toks] of partTokens) {
+    const term = byFolded.get(folded)!;
+    if (term.tokens.size === 0) term.tokens = toks;
   }
   for (const t of opts.extraTerms ?? []) add(t, null);
   // Extra terms that are also player names count as player names.
@@ -232,8 +244,8 @@ function findContacts(text: string): Contact[] {
 /** Neutralises anything in the input that already looks like one of our tokens. */
 function neutraliseTokens(text: string): string {
   return text
-    .replace(/\[\s*((?:P\d{2,3})|(?:A\d+)|(?:X\d+))\s*\]/gi, '#$1')
-    .replace(/(?<![\p{L}\p{N}_#])(P\d{2,3})(?![\p{L}\p{N}_])/gu, '#$1');
+    .replace(/\[\s*((?:P\d{2,4})|(?:A\d+)|(?:X\d+))\s*\]/gi, '#$1')
+    .replace(/(?<![\p{L}\p{N}_#])(P\d{2,4})(?![\p{L}\p{N}_])/gu, '#$1');
 }
 
 interface Span {
@@ -406,7 +418,7 @@ export function createMasker(opts: MaskOptions): Masker {
 
   function unmask(text: string, restore: Record<string, string> = {}): string {
     return text.replace(
-      /\[\s*([Pp]\d{2,3}|[Aa]\d+|[Xx]\d+)\s*\]|(?<![\p{L}\p{N}_[#])(P\d{2,3})(?![\p{L}\p{N}_\]])/gu,
+      /\[\s*([Pp]\d{2,4}|[Aa]\d+|[Xx]\d+)\s*\]|(?<![\p{L}\p{N}_[#])(P\d{2,4})(?![\p{L}\p{N}_\]])/gu,
       (whole, bracketed: string | undefined, bare: string | undefined) => {
         const id = (bracketed ?? bare)!.toUpperCase();
         if (id.startsWith('P')) return nameByToken.get(id) ?? whole;

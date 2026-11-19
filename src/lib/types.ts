@@ -94,7 +94,7 @@ export const DEFAULT_SETTINGS: Settings = {
   coachName: '',
   extraHiddenWords: [],
   cloudAllowed: true,
-  syncEnabled: true,
+  syncEnabled: false,
   onboarded: false,
   nextToken: 1,
   theme: 'system',

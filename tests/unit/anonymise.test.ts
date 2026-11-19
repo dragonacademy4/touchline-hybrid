@@ -22,13 +22,13 @@ const allowedSources = JSON.parse(/source in (\[[^\]]*\])/.exec(rules)![1].repla
 /** Mirrors the create/update rule in firestore.rules (updatedAt is added by sync.ts). */
 function expectSatisfiesRules(r: AnonymisedSession) {
   for (const k of Object.keys(r)) expect(allowedKeys).toContain(k);
-  expect(Number.isInteger(r.v)).toBe(true);
-  expect(typeof r.date).toBe('string');
-  expect(r.date.length).toBe(ruleLimit('date'));
+  expect(r.v).toBe(1);
+  expect(r.date).toMatch(/^[0-9]{4}-[0-9]{2}-[0-9]{2}$/);
   expect([...r.group].length).toBeLessThanOrEqual(ruleLimit('group'));
   expect([...r.focus].length).toBeLessThanOrEqual(ruleLimit('focus'));
-  expect(Array.isArray(r.observations)).toBe(true);
+  expect(typeof r.observations).toBe('string');
   expect(r.observations.length).toBeLessThanOrEqual(ruleLimit('observations'));
+  expect(Array.isArray(JSON.parse(r.observations))).toBe(true);
   expect([...r.summary].length).toBeLessThanOrEqual(ruleLimit('summary'));
   expect(allowedSources).toContain(r.source);
 }
@@ -43,7 +43,9 @@ describe('firestore.rules', () => {
   it('has the limits this test relies on', () => {
     expect(allowedKeys).toEqual(['v', 'date', 'group', 'focus', 'observations', 'summary', 'source', 'updatedAt']);
     expect(allowedSources).toEqual(['on_device', 'in_cloud', 'manual']);
-    expect([ruleLimit('date'), ruleLimit('group'), ruleLimit('focus'), ruleLimit('observations'), ruleLimit('summary')]).toEqual([10, 40, 120, 40, 2000]);
+    expect([ruleLimit('group'), ruleLimit('focus'), ruleLimit('observations'), ruleLimit('summary')]).toEqual([40, 120, 40000, 2000]);
+    expect(rules).toContain('request.resource.data.v == 1');
+    expect(rules).toContain('request.resource.data.updatedAt == request.time');
   });
 });
 
@@ -72,10 +74,10 @@ describe('anonymiseSession', () => {
       date: '2026-11-18',
       group: "[P03]'s Five",
       focus: 'Getting [P02] and [P01] to scan',
-      observations: [
+      observations: JSON.stringify([
         { token: 'P01', strength: '[P01] passed to [P03]', nextStep: 'Talk to [A1] more' },
         { token: 'P02', strength: '[P02] beat [X1] on her own', nextStep: 'Rest' },
-      ],
+      ]),
       summary: '[P06] and [P01] were great. [A1] scored. Contact [X1].',
       source: 'on_device',
     });
@@ -107,8 +109,9 @@ describe('anonymiseSession', () => {
     });
     const r = anonymiseSession(big, squad, masker)!;
     expectSatisfiesRules(r);
-    expect(r.observations).toHaveLength(40);
-    expect(r.observations[39].strength).toBe('Obs 39');
+    const list = JSON.parse(r.observations);
+    expect(list).toHaveLength(40);
+    expect(list[39].strength).toBe('Obs 39');
   });
 
   it('cuts at a word boundary, so a cut word never becomes a name', () => {

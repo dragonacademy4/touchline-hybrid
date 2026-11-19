@@ -6,7 +6,7 @@ export default defineConfig({
   expect: { timeout: 10_000 },
   fullyParallel: true,
   workers: 4,
-  reporter: [['list'], ['json', { outputFile: '../qa/e2e-results.json' }]],
+  reporter: [['list'], ['json', { outputFile: `${process.env.QA_DIR ?? 'test-results/qa'}/e2e-results.json` }]],
   use: {
     baseURL: 'http://localhost:4173',
     channel: 'chrome',

@@ -17,4 +17,7 @@ export const COMMON_WORD_NAMES: ReadonlySet<string> = new Set([
   'august', 'march',
   // feelings
   'grace', 'hope', 'joy', 'faith', 'patience', 'rose',
+  // two-letter English words that are also given names somewhere (An, Ha, Bo...)
+  'an', 'as', 'at', 'be', 'by', 'do', 'go', 'ha', 'he', 'hi', 'if', 'in', 'is', 'it', 'me', 'my', 'no', 'of', 'oh', 'ok', 'on', 'or',
+  'so', 'to', 'up', 'us', 'we',
 ]);

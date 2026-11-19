@@ -72,8 +72,9 @@ export type SessionPlan =
 /**
  * Where session structuring runs:
  * - Gemini Nano ready: on-device. If cloud is allowed and we're online, use
- *   prefer_on_device so a device hiccup can still fall back to the cloud
- *   (names are already hidden); otherwise only_on_device.
+ *   prefer_on_device, so the SDK uses the cloud if Nano stops being available
+ *   between our check and the call (names are already hidden); otherwise
+ *   only_on_device.
  * - No Nano, online, cloud allowed: the cloud (names hidden).
  * - No Nano and offline (or cloud switched off): no model. Build plain notes
  *   from the chips and keep the session ready to structure later.
@@ -88,6 +89,15 @@ export function planSessionRun(c: Conditions): SessionPlan {
 
 export function canUseCloud(c: Conditions): boolean {
   return c.online && c.cloudAllowed;
+}
+
+/**
+ * Leak-checks the data part of a prompt. The fixed instructions come first and
+ * are app text (or Remote Config), not notes about a child, so they are skipped:
+ * otherwise a child called "An" would block "return an empty list".
+ */
+function assertDataHasNoLeaks(masker: Masker, prompt: string, instructions: string) {
+  assertNoLeaks(masker, prompt.startsWith(instructions) ? prompt.slice(instructions.length) : prompt);
 }
 
 export function buildMasker(players: Player[], settings: Pick<Settings, 'extraHiddenWords'>): Masker {
@@ -143,7 +153,7 @@ export function prepareSessionPrompt(session: Session, players: Player[], settin
     },
     prompts.session,
   );
-  assertNoLeaks(masker, prompt);
+  assertDataHasNoLeaks(masker, prompt, prompts.session);
   return { prompt, restore, tokens: new Set(noted.map((n) => tokenOf.get(n.playerId)!)), masker };
 }
 
@@ -261,7 +271,7 @@ export async function parentUpdate(
   const tokens = new Set(records.flatMap((r) => r.players.map((p) => p.token)));
   const from = weekStart(anyDay);
   const prompt = buildParentUpdatePrompt(m(group), from, records, prompts.parentUpdate);
-  assertNoLeaks(masker, prompt);
+  assertDataHasNoLeaks(masker, prompt, prompts.parentUpdate);
   const res = await run({ prompt, schema: PARENT_UPDATE_SCHEMA, mode: 'only_in_cloud', purpose: 'parent_update' });
   const parsed = parseParentUpdate(res.text, tokens);
   const byToken = new Map(players.map((p) => [p.token, p]));
@@ -309,7 +319,7 @@ export async function progressReport(
     });
   if (records.length < 2) throw new NotEnoughData(`${player.name} needs notes from at least 2 sessions in the last 4 weeks.`);
   const prompt = buildProgressPrompt(player.token, from, today, records, prompts.progress);
-  assertNoLeaks(masker, prompt);
+  assertDataHasNoLeaks(masker, prompt, prompts.progress);
   const res = await run({ prompt, schema: PROGRESS_SCHEMA, mode: 'only_in_cloud', purpose: 'progress' });
   const parsed = parseProgress(res.text);
   const un = (t: string) => masker.unmask(t, restore);

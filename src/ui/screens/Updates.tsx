@@ -58,7 +58,7 @@ export function Updates() {
           <Banner tone="warn">{blocked}</Banner>
         ) : (
           <button class="btn btn-cloud btn-lg btn-block" type="button" onClick={() => setRunning(true)}>
-            <IconEyeOff /> {current ? 'Write it again' : "Write this week's update"}
+            <IconEyeOff /> {current ? 'Write it again' : week === 'this' ? "Write this week's update" : "Write last week's update"}
           </button>
         )}
 

@@ -11,8 +11,17 @@ export type Route =
   | { name: 'player'; id: string }
   | { name: 'card'; sessionId: string; playerId: string };
 
+/** A malformed link (e.g. "%E0") must not crash the app. */
+function safeDecode(s: string): string {
+  try {
+    return decodeURIComponent(s);
+  } catch {
+    return s;
+  }
+}
+
 export function parse(hash: string): Route {
-  const parts = hash.replace(/^#\/?/, '').split('/').filter(Boolean).map(decodeURIComponent);
+  const parts = hash.replace(/^#\/?/, '').split('/').filter(Boolean).map(safeDecode);
   switch (parts[0]) {
     case 'squad':
       return { name: 'squad' };

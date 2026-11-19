@@ -203,9 +203,9 @@ describe('prepareSessionPrompt', () => {
     expect(() => prepareSessionPrompt(session({ notes: [note('p1', [], 'brave run')] }), withAlias, cfg)).not.toThrow();
   });
 
-  it('throws LeakError when custom instructions contain a name', () => {
+  it('does not treat the fixed instructions as child data (a child called "An" vs "an empty list")', () => {
     const t = session({ notes: [note('p1', ['brave'])] });
-    expect(() => prepareSessionPrompt(t, squad, cfg, { ...DEFAULT_PROMPTS, session: 'Be kind to Freya.' })).toThrow(LeakError);
+    expect(() => prepareSessionPrompt(t, squad, cfg, { ...DEFAULT_PROMPTS, session: 'Be kind to Freya.' })).not.toThrow();
   });
 });
 

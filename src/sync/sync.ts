@@ -13,7 +13,7 @@ export async function syncSessions(
   sessions: Session[],
   players: Player[],
   settings: Settings,
-  onAck: (sessionId: string) => void,
+  onAck: (sessionId: string, sentUpdatedAt: number) => void,
 ): Promise<SyncResult> {
   if (!settings.syncEnabled) return { ok: true, queued: 0 };
   const masker = buildMasker(players, settings);
@@ -24,12 +24,19 @@ export async function syncSessions(
     const [db, uid] = await Promise.all([getDb(), getUid()]);
     let queued = 0;
     for (const s of pending) {
-      const record = anonymiseSession(s, players, masker);
+      let record;
+      try {
+        record = anonymiseSession(s, players, masker);
+      } catch (e) {
+        // A leak check failure skips this session only; the others still sync.
+        console.warn('Sync skipped a session:', e instanceof Error ? e.name : 'error');
+        continue;
+      }
       if (!record) continue;
       // Resolves when the server confirms; offline, Firestore holds it until signal returns.
       setDoc(doc(db, 'coaches', uid, 'sessions', s.id), { ...record, updatedAt: serverTimestamp() })
-        .then(() => onAck(s.id))
-        .catch((e) => console.warn('Sync failed for a session', e?.code ?? e));
+        .then(() => onAck(s.id, s.updatedAt))
+        .catch((e) => console.warn('Sync failed for a session:', e?.code ?? 'error'));
       queued++;
     }
     return { ok: true, queued };
@@ -38,9 +45,37 @@ export async function syncSessions(
   }
 }
 
-/** Deletes every synced record for this coach (used by "Delete all data"). */
-export async function deleteCloudCopies(sessionIds: string[]): Promise<void> {
-  const [{ doc, deleteDoc }, { getDb, getUid }] = await Promise.all([import('firebase/firestore'), import('../ai/firebase')]);
-  const [db, uid] = await Promise.all([getDb(), getUid()]);
-  await Promise.all(sessionIds.map((id) => deleteDoc(doc(db, 'coaches', uid, 'sessions', id))));
+/** Deletes one session's cloud copy. Offline, Firestore queues the delete until signal returns. */
+export async function deleteCloudCopy(sessionId: string): Promise<void> {
+  try {
+    const [{ doc, deleteDoc }, { getDb, getUid }] = await Promise.all([import('firebase/firestore'), import('../ai/firebase')]);
+    const [db, uid] = await Promise.all([getDb(), getUid()]);
+    deleteDoc(doc(db, 'coaches', uid, 'sessions', sessionId)).catch((e) => console.warn('Cloud delete failed:', e?.code ?? 'error'));
+  } catch (e) {
+    console.warn('Cloud delete not available:', e instanceof Error ? e.name : 'error');
+  }
+}
+
+function withTimeout<T>(p: Promise<T>, ms: number): Promise<T> {
+  return Promise.race([p, new Promise<T>((_, rej) => setTimeout(() => rej(new Error('timeout')), ms))]);
+}
+
+/**
+ * Deletes every backed-up record for this coach by listing the collection on
+ * the server (so records this phone no longer knows about go too), then
+ * removes the anonymous account and Firestore's local cache.
+ */
+export async function deleteAllCloudCopies(timeoutMs = 20_000): Promise<number> {
+  const [{ collection, getDocsFromServer, deleteDoc, terminate, clearIndexedDbPersistence }, { getDb, getUid, signOutAndForget }] = await Promise.all([
+    import('firebase/firestore'),
+    import('../ai/firebase'),
+  ]);
+  const db = await getDb();
+  const uid = await withTimeout(getUid(), timeoutMs);
+  const snap = await withTimeout(getDocsFromServer(collection(db, 'coaches', uid, 'sessions')), timeoutMs);
+  await withTimeout(Promise.all(snap.docs.map((d) => deleteDoc(d.ref))), timeoutMs);
+  await terminate(db);
+  await clearIndexedDbPersistence(db).catch(() => undefined);
+  await signOutAndForget();
+  return snap.size;
 }

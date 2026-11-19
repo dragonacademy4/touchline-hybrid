@@ -119,7 +119,7 @@ function text(v: unknown, max: number): string {
 
 function normToken(v: unknown): string | null {
   if (typeof v !== 'string') return null;
-  const m = /^\s*\[?\s*(P\d{2,3})\s*\]?\s*$/i.exec(v);
+  const m = /^\s*\[?\s*(P\d{2,4})\s*\]?\s*$/i.exec(v);
   return m ? m[1].toUpperCase() : null;
 }
 

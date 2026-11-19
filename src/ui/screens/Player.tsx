@@ -31,7 +31,7 @@ export function PlayerScreen({ id }: { id: string }) {
   const blocked = cloudBlockedReason();
 
   return (
-    <Shell title={player.name} backTo={{ name: 'squad' }}
+    <Shell title={player.name} docTitle="Player" backTo={{ name: 'squad' }}
       actions={<button class="icon-btn" type="button" aria-label={`Edit ${player.name}`} onClick={() => setEditing(true)}><IconEdit /></button>}>
       <div class="stack narrow">
         <div class="row-between wrap">

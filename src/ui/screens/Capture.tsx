@@ -102,8 +102,8 @@ export function Capture({ id }: { id: string }) {
 
         <label class="field">
           <span>Whole-group notes <span class="muted" style={{ fontWeight: 400 }}>(optional)</span></span>
-          <textarea class="textarea" value={general} placeholder="How did the session go? Anything for next week?" maxLength={1500}
-            onInput={(e) => setGeneral((e.target as HTMLTextAreaElement).value)} onBlur={saveGeneral} />
+          <textarea class="textarea" spellcheck={false} value={general} placeholder="How did the session go? Anything for next week?" maxLength={1500}
+            onInput={(e) => setGeneral((e.target as HTMLTextAreaElement).value)} onBlur={saveGeneral} onChange={saveGeneral} />
         </label>
 
         <div class="stack-sm" style={{ position: 'sticky', bottom: 0, padding: '12px 0 calc(12px + env(safe-area-inset-bottom))', background: 'linear-gradient(transparent, var(--ground) 25%)' }}>
@@ -117,7 +117,7 @@ export function Capture({ id }: { id: string }) {
               : plan.kind === 'chips'
                 ? 'Saved on this phone. Structure with AI later.'
                 : plan.expect === 'on_device'
-                  ? 'Gemini Nano runs here. Nothing leaves this phone.'
+                  ? 'Gemini Nano runs here. Names are hidden either way.'
                   : 'Names become tokens like P01 before anything is sent.'}
           </p>
         </div>
@@ -216,7 +216,7 @@ function NoteSheet(props: { session: Session; player: Player; squad: Player[]; o
         <label class="field">
           <span>Anything else?</span>
           <div style={{ position: 'relative' }}>
-            <textarea class="textarea" value={text} maxLength={600} placeholder={`e.g. Scored with his left foot, much braver in the tackle`}
+            <textarea class="textarea" spellcheck={false} value={text} maxLength={600} placeholder={`e.g. Scored with his left foot, much braver in the tackle`}
               onInput={(e) => { setText((e.target as HTMLTextAreaElement).value); if (!present) setPresent(true); }} />
           </div>
           <span class="hint">Write names freely. They're hidden before any AI sees this.</span>
@@ -300,7 +300,7 @@ export function StructureSheet({ session, onClose }: { session: Session; onClose
         setStep('done');
         navigate({ name: 'review', id: session.id }, true);
       } catch (e) {
-        console.warn('Structuring failed', e);
+        console.warn('Structuring failed:', e instanceof Error ? e.name : 'error');
         if (live) setError(friendlyError(e));
       }
     })();
@@ -345,7 +345,7 @@ export function StructureSheet({ session, onClose }: { session: Session; onClose
           </ol>
           <p class="caption muted">
             {plan.kind === 'model' && plan.expect === 'on_device'
-              ? <><IconPhone width={14} height={14} style={{ display: 'inline', verticalAlign: '-2px' }} /> Nothing leaves this phone for this step.</>
+              ? <><IconPhone width={14} height={14} style={{ display: 'inline', verticalAlign: '-2px' }} /> Gemini Nano is doing this on the phone. Names were hidden first anyway.</>
               : <><IconCloud width={14} height={14} style={{ display: 'inline', verticalAlign: '-2px' }} /> The cloud model only sees tokens like {pairs[0]?.token ?? 'P01'}. You can read exactly what was sent on the next screen.</>}
           </p>
         </div>

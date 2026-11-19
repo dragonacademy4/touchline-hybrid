@@ -1,4 +1,4 @@
-import { addNote, bodiesWithNames, expect, fakeGeminiNano, mockFirebase, startDemo, startSession, test } from './fixtures';
+import { addNote, bodiesWithNames, expect, fakeGeminiNano, mockFirebase, startDemo, startSession, test, QA } from './fixtures';
 
 test('on-device path: with Gemini Nano available, structuring never calls the cloud', async ({ page, consoleErrors }, info) => {
   await fakeGeminiNano(page, 'available');
@@ -11,7 +11,7 @@ test('on-device path: with Gemini Nano available, structuring never calls the cl
   await expect(page).toHaveURL(/\/review$/);
   await expect(page.locator('[data-source="on_device"]').first()).toBeVisible();
   await expect(page.getByText('Brilliant effort today, Theo!')).toBeVisible();
-  await page.screenshot({ path: `../qa/e2e/${info.project.name}-08-on-device-TEST-DOUBLE.png`, fullPage: true });
+  await page.screenshot({ path: `${QA}/e2e/${info.project.name}-08-on-device-TEST-DOUBLE.png`, fullPage: true });
 
   // No request to the cloud model at all.
   expect(log.requests.filter((r) => r.url.includes('firebasevertexai'))).toEqual([]);

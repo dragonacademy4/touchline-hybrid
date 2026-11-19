@@ -9,6 +9,9 @@
  */
 import { test as base, expect, type Page, type Route } from '@playwright/test';
 
+/** Where screenshots go. The project's own QA folder sets QA_DIR=../qa. */
+export const QA = process.env.QA_DIR ?? 'test-results/qa';
+
 export const DEMO_NAMES = ['Ollie', 'Oliver', 'Amara', 'Jayden', 'Freya', 'Kai', 'Isla', 'Rhys', 'Maisie', 'Theo', 'Nia', 'Alfie', 'Seren'];
 
 /** Builds a model reply in the requested schema, using only tokens found in the prompt. */

@@ -12,7 +12,8 @@ export interface AnonymisedSession {
   date: string;
   group: string;
   focus: string;
-  observations: Array<{ token: string; strength: string; nextStep: string }>;
+  /** JSON array of { token, strength, nextStep }, stored as one string so the rules can bound its size. */
+  observations: string;
   summary: string;
   source: 'on_device' | 'in_cloud' | 'manual';
 }
@@ -30,6 +31,15 @@ function clip(t: string, max: number): string {
   return WORD_CHAR.test(t[max]) ? cut.replace(/[\p{L}\p{M}\p{N}]+$/u, '') : cut;
 }
 
+export interface AnonymisedObservation {
+  token: string;
+  strength: string;
+  nextStep: string;
+}
+
+/** Max length of the observations JSON string (matches firestore.rules). */
+export const MAX_OBSERVATIONS_JSON = 40_000;
+
 export function anonymiseSession(session: Session, players: Player[], masker: Masker): AnonymisedSession | null {
   if (!session.structured || session.demo) return null;
   const tokenOf = new Map(players.map((p) => [p.id, p.token]));
@@ -41,13 +51,25 @@ export function anonymiseSession(session: Session, players: Player[], masker: Ma
     date: session.date,
     group: clip(m(session.group), 40),
     focus: clip(m(session.focus), 120),
-    observations: session.structured.observations
-      .filter((o) => tokenOf.has(o.playerId))
-      .slice(0, 40)
-      .map((o) => ({ token: tokenOf.get(o.playerId)!, strength: m(o.strength), nextStep: m(o.nextStep) })),
+    observations: observationsJson(
+      session.structured.observations
+        .filter((o) => tokenOf.has(o.playerId))
+        .slice(0, 40)
+        .map((o) => ({ token: tokenOf.get(o.playerId)!, strength: clip(m(o.strength), 400), nextStep: clip(m(o.nextStep), 400) })),
+    ),
     summary: clip(m(session.structured.summary), 2000),
     source: src === 'on_device' || src === 'in_cloud' ? src : 'manual',
   };
   assertNoLeaks(masker, JSON.stringify(record));
   return record;
+}
+
+/** Serialises observations, dropping trailing entries if needed to stay within the rules' size limit. */
+function observationsJson(list: AnonymisedObservation[]): string {
+  let out = JSON.stringify(list);
+  while (out.length > MAX_OBSERVATIONS_JSON && list.length) {
+    list = list.slice(0, -1);
+    out = JSON.stringify(list);
+  }
+  return out;
 }

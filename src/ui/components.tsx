@@ -16,11 +16,13 @@ const TABS: Array<{ route: Route; label: string; icon: (p: object) => JSX.Elemen
   { route: { name: 'settings' }, label: 'Settings', icon: IconGear, match: ['settings', 'privacy'] },
 ];
 
-export function Shell(props: { title: string; backTo?: Route; actions?: ComponentChildren; tabs?: boolean; children: ComponentChildren }) {
+export function Shell(props: { title: string; docTitle?: string; backTo?: Route; actions?: ComponentChildren; tabs?: boolean; children: ComponentChildren }) {
   const showTabs = props.tabs !== false;
+  // Screens about a child pass a generic docTitle: page titles end up in browser history (and history sync).
+  const docTitle = props.docTitle ?? props.title;
   useEffect(() => {
-    document.title = props.title === 'Touchline' ? 'Touchline: pitch-side notes' : `${props.title} · Touchline`;
-  }, [props.title]);
+    document.title = docTitle === 'Touchline' ? 'Touchline: pitch-side notes' : `${docTitle} · Touchline`;
+  }, [docTitle]);
   return (
     <div class="shell">
       <header class="topbar">
@@ -153,6 +155,9 @@ export function Empty(props: { title: string; children: ComponentChildren; actio
 export function Sheet(props: { title: string; onClose: () => void; children: ComponentChildren; actions?: ComponentChildren; labelId?: string }) {
   const ref = useRef<HTMLDivElement>(null);
   const id = props.labelId ?? 'sheet-title';
+  // Escape must call the latest onClose (it may save the latest edits), not the first render's.
+  const closeRef = useRef(props.onClose);
+  closeRef.current = props.onClose;
   useEffect(() => {
     const prev = document.activeElement as HTMLElement | null;
     const el = ref.current!;
@@ -160,7 +165,7 @@ export function Sheet(props: { title: string; onClose: () => void; children: Com
     const first = el.querySelector<HTMLElement>('[data-autofocus]') ?? focusables()[0];
     first?.focus();
     const onKey = (e: KeyboardEvent) => {
-      if (e.key === 'Escape') props.onClose();
+      if (e.key === 'Escape') closeRef.current();
       if (e.key === 'Tab') {
         const f = focusables();
         if (!f.length) return;
@@ -260,7 +265,7 @@ export function Fold({ pairs, play }: { pairs: Array<{ name: string; token: stri
 
 /** "What the model saw": the exact masked text, with tokens highlighted. */
 export function Peek({ text, label }: { text: string; label: string }) {
-  const parts = text.split(/(\[(?:P\d{2,3}|A\d+|X\d+)\]|\bP\d{2,3}\b)/g);
+  const parts = text.split(/(\[(?:P\d{2,4}|A\d+|X\d+)\]|\bP\d{2,4}\b)/g);
   return (
     <div class="peek" tabIndex={0} aria-label={label}>
       {parts.map((p, i) => (i % 2 === 1 ? <mark key={i}>{p}</mark> : p))}

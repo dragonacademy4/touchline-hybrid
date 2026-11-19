@@ -1,13 +1,12 @@
-import { useState } from 'preact/hooks';
+import { useEffect, useState } from 'preact/hooks';
 import { conditions, players, saveSession, sessions, syncNow } from '../../data/store';
 import { shortDate } from '../../lib/dates';
 import type { PlayerObservation, Session } from '../../lib/types';
 import { planSessionRun } from '../../ai/engine';
 import { Banner, Empty, Peek, Sheet, Shell, SourceBadge } from '../components';
 import { IconArrowUp, IconChevron, IconEdit, IconFlag, IconAlert, IconStar, IconCheckCircle, IconSparkle } from '../icons';
-import { href, navigate } from '../router';
+import { href } from '../router';
 import { StructureSheet } from './Capture';
-import { useEffect } from 'preact/hooks';
 
 export function Review({ id }: { id: string }) {
   const session = sessions.value.find((s) => s.id === id);
@@ -113,7 +112,9 @@ export function Review({ id }: { id: string }) {
         <div class="row wrap">
           <a class="btn btn-secondary" href={href({ name: 'session', id: session.id })}><IconEdit /> Edit notes</a>
           {plan.kind === 'model' && st.source !== 'chips' && !session.demo && (
-            <button class="btn btn-ghost" type="button" onClick={() => setRerun(true)}>Run again</button>
+            <button class="btn btn-ghost" type="button" onClick={() => setRerun(true)}>
+              {st.observations.some((o) => o.edited) ? 'Run again (replaces your edits)' : 'Run again'}
+            </button>
           )}
         </div>
         {session.syncedAt && <p class="caption muted">Anonymised copy synced (tokens only, no names).</p>}
@@ -152,6 +153,3 @@ function EditObservation(props: { session: Session; obs: PlayerObservation; name
   );
 }
 
-export function goReview(id: string) {
-  navigate({ name: 'review', id });
-}

@@ -178,7 +178,7 @@ function StartSheet(props: { groups: string[]; defaultGroup: string; nameOf: (id
         )}
         <label class="field">
           <span>Focus <span class="muted" style={{ fontWeight: 400 }}>(optional)</span></span>
-          <input class="input" data-autofocus value={focus} maxLength={80} placeholder="e.g. Passing and receiving" onInput={(e) => setFocus((e.target as HTMLInputElement).value)} />
+          <input class="input" spellcheck={false} data-autofocus value={focus} maxLength={80} placeholder="e.g. Passing and receiving" onInput={(e) => setFocus((e.target as HTMLInputElement).value)} />
         </label>
         <div class="chips" aria-label="Focus ideas">
           {FOCUS_IDEAS.map((f) => (

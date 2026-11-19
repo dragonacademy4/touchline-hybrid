@@ -28,5 +28,5 @@ export const REMOTE_DEFAULTS = {
 
 export type RemoteKey = keyof typeof REMOTE_DEFAULTS;
 
-/** Public source repository. Set once the Mac session has created it (MAC-REQUEST REQ-2). */
+/** Public source repository, set at build time (shown in Settings). */
 export const REPO_URL: string = import.meta.env.VITE_REPO_URL ?? '';

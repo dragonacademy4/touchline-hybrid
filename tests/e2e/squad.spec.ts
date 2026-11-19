@@ -1,11 +1,11 @@
-import { expect, mockFirebase, startDemo, test } from './fixtures';
+import { expect, mockFirebase, startDemo, test, QA } from './fixtures';
 
 test('own squad from scratch: empty states, add, validate, duplicate, edit, remove with undo', async ({ page, consoleErrors }, info) => {
   await mockFirebase(page);
   await page.goto('/');
   await page.getByRole('button', { name: 'Start with my own squad' }).click();
   await expect(page.getByRole('heading', { name: 'No players yet' })).toBeVisible();
-  await page.screenshot({ path: `../qa/e2e/${info.project.name}-10-squad-empty.png`, fullPage: true });
+  await page.screenshot({ path: `${QA}/e2e/${info.project.name}-10-squad-empty.png`, fullPage: true });
 
   await page.getByRole('button', { name: 'Add a player' }).click();
   const dialog = page.getByRole('dialog', { name: 'Add a player' });
@@ -28,7 +28,7 @@ test('own squad from scratch: empty states, add, validate, duplicate, edit, remo
 
   await expect(page.getByRole('link', { name: /Sam B.*Also: Sam, Sammy.*P01/ })).toBeVisible();
   await expect(page.getByRole('link', { name: /Sam K.*P02/ })).toBeVisible();
-  await page.screenshot({ path: `../qa/e2e/${info.project.name}-11-squad.png`, fullPage: true });
+  await page.screenshot({ path: `${QA}/e2e/${info.project.name}-11-squad.png`, fullPage: true });
 
   // Today now shows the hero for the new group.
   await page.getByRole('link', { name: 'Today' }).click();

@@ -3,16 +3,18 @@ import { loadDemo, nano, online, toast, updateSettings } from '../../data/store'
 import { NANO_LABEL } from '../../ai/availability';
 import { IconCloud, IconEyeOff, IconPhone, Mark, PitchArc } from '../icons';
 import { navigate } from '../router';
-import { Spinner } from '../components';
+import { Spinner, Switch } from '../components';
 
 export function Welcome() {
   const [busy, setBusy] = useState<'demo' | 'own' | null>(null);
+  const [backup, setBackup] = useState(false);
   const n = nano.value;
   const nanoReady = n === 'available';
 
   const startDemo = async () => {
     setBusy('demo');
     try {
+      await updateSettings({ syncEnabled: backup });
       await loadDemo();
       navigate({ name: 'today' }, true);
       toast('Demo squad loaded: 12 fictional players and 3 past sessions.');
@@ -23,7 +25,7 @@ export function Welcome() {
   };
   const startOwn = async () => {
     setBusy('own');
-    await updateSettings({ onboarded: true });
+    await updateSettings({ onboarded: true, syncEnabled: backup });
     navigate({ name: 'squad' }, true);
   };
 
@@ -66,6 +68,11 @@ export function Welcome() {
                     : `Touchline will hide names and use the cloud when you have signal${online.value ? '' : ' (you are offline right now; notes still save)'}.`}
               </div>
             </div>
+          </div>
+
+          <div class="card card-tight">
+            <Switch id="welcome-backup" label="Back up anonymised sessions" checked={backup} onChange={setBackup}
+              hint="Optional. A copy with tokens instead of names, kept in Google Cloud Firestore under an anonymous sign-in. Change it any time in Settings." />
           </div>
 
           <div class="stack-sm">

@@ -112,13 +112,13 @@ export function PlayerSheet({ player, onClose }: { player: Player | null; onClos
       <form id="player-form" class="stack" onSubmit={submit} noValidate>
         <label class="field">
           <span>First name</span>
-          <input id="pname" class="input" data-autofocus value={name} maxLength={40} autoComplete="off" autoCapitalize="words"
+          <input id="pname" class="input" spellcheck={false} data-autofocus value={name} maxLength={40} autoComplete="off" autoCapitalize="words"
             onInput={(e) => { setName((e.target as HTMLInputElement).value); setError(null); }} aria-invalid={!!error} aria-describedby={error ? 'perr' : undefined} />
           <span class="hint">First names only. Two with the same name? Add an initial, like "Sam B".</span>
         </label>
         <label class="field">
           <span>Nicknames <span class="muted" style={{ fontWeight: 400 }}>(optional)</span></span>
-          <input class="input" value={aliases} maxLength={120} autoComplete="off" placeholder="e.g. Ollie, Ol" onInput={(e) => setAliases((e.target as HTMLInputElement).value)} />
+          <input class="input" spellcheck={false} value={aliases} maxLength={120} autoComplete="off" placeholder="e.g. Ollie, Ol" onInput={(e) => setAliases((e.target as HTMLInputElement).value)} />
           <span class="hint">Separate with commas. Nicknames are hidden from the AI too.</span>
         </label>
         <label class="field">

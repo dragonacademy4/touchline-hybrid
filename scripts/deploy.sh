@@ -11,7 +11,7 @@ set -a
 set +a
 export VITE_RECAPTCHA_ENTERPRISE_SITE_KEY="$RECAPTCHA_ENTERPRISE_SITE_KEY"
 export VITE_REPO_URL="${GITHUB_REPO:+https://github.com/$GITHUB_REPO}"
-APPCHECK_DEBUG_TOKEN_CHECK="$APPCHECK_DEBUG_TOKEN"; unset APPCHECK_DEBUG_TOKEN VITE_APPCHECK_DEBUG_TOKEN
+APPCHECK_DEBUG_TOKEN_CHECK="${APPCHECK_DEBUG_TOKEN:-}"; unset APPCHECK_DEBUG_TOKEN VITE_APPCHECK_DEBUG_TOKEN
 npm run build
-if grep -rqF "${APPCHECK_DEBUG_TOKEN_CHECK:-__none__}" dist; then echo "debug token found in build"; exit 1; fi
+if [ -n "$APPCHECK_DEBUG_TOKEN_CHECK" ] && grep -rqF "$APPCHECK_DEBUG_TOKEN_CHECK" dist; then echo "debug token found in build"; exit 1; fi
 npx wrangler deploy

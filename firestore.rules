@@ -9,16 +9,20 @@ service cloud.firestore {
       allow read, delete: if request.auth != null && request.auth.uid == uid;
       allow create, update: if request.auth != null
         && request.auth.uid == uid
+        && sessionId.size() <= 64
         && request.resource.data.keys().hasOnly(
              ['v', 'date', 'group', 'focus', 'observations', 'summary', 'source', 'updatedAt'])
-        && request.resource.data.v is int
-        && request.resource.data.date is string && request.resource.data.date.size() == 10
+        && request.resource.data.keys().hasAll(
+             ['v', 'date', 'group', 'focus', 'observations', 'summary', 'source', 'updatedAt'])
+        && request.resource.data.v == 1
+        && request.resource.data.date is string
+        && request.resource.data.date.matches('^[0-9]{4}-[0-9]{2}-[0-9]{2}$')
         && request.resource.data.group is string && request.resource.data.group.size() <= 40
         && request.resource.data.focus is string && request.resource.data.focus.size() <= 120
-        && request.resource.data.observations is list && request.resource.data.observations.size() <= 40
+        && request.resource.data.observations is string && request.resource.data.observations.size() <= 40000
         && request.resource.data.summary is string && request.resource.data.summary.size() <= 2000
         && request.resource.data.source in ['on_device', 'in_cloud', 'manual']
-        && request.resource.data.updatedAt is timestamp;
+        && request.resource.data.updatedAt == request.time;
     }
     match /{document=**} {
       allow read, write: if false;

@@ -1,5 +1,5 @@
 import { useEffect, useState } from 'preact/hooks';
-import { deleteEverything, exportJson, nano, nanoProgress, online, sessions, settings, toast, updateSettings } from '../../data/store';
+import { CloudDeleteError, deleteEverything, exportJson, nano, nanoProgress, online, sessions, settings, toast, updateSettings } from '../../data/store';
 import { NANO_LABEL, nanoStatus } from '../../ai/availability';
 import { REMOTE_DEFAULTS, REPO_URL } from '../../ai/config';
 import { speechAvailability, installSpeech } from '../../ai/speech';
@@ -11,6 +11,8 @@ export function SettingsScreen() {
   const s = settings.value;
   const [word, setWord] = useState('');
   const [confirm, setConfirm] = useState(false);
+  const [deleting, setDeleting] = useState(false);
+  const [deleteError, setDeleteError] = useState<string | null>(null);
   const [voice, setVoice] = useState<string>('…');
   const [model, setModel] = useState<string>(REMOTE_DEFAULTS.cloud_model);
   const n = nano.value;
@@ -86,7 +88,7 @@ export function SettingsScreen() {
           <h2 id="hide-h" class="title">Also hide these words</h2>
           <p class="small muted">Squad names and nicknames are always hidden. Add anything else that could identify a child: your club, a school, a sibling or a parent's name.</p>
           <form class="row" onSubmit={addWord}>
-            <input class="input" value={word} maxLength={60} placeholder="e.g. Riverside Juniors" aria-label="Word to hide" onInput={(e) => setWord((e.target as HTMLInputElement).value)} />
+            <input class="input" spellcheck={false} value={word} maxLength={60} placeholder="e.g. Riverside Juniors" aria-label="Word to hide" onInput={(e) => setWord((e.target as HTMLInputElement).value)} />
             <button class="btn btn-secondary" type="submit" disabled={word.trim().length < 2}>Add</button>
           </form>
           {s.extraHiddenWords.length > 0 && (
@@ -141,12 +143,29 @@ export function SettingsScreen() {
         </p>
       </div>
       {confirm && (
-        <Sheet title="Delete everything?" onClose={() => setConfirm(false)}
+        <Sheet title="Delete everything?" onClose={() => { setConfirm(false); setDeleteError(null); }}
           actions={<>
             <button class="btn btn-secondary" style={{ flex: 1 }} type="button" onClick={() => setConfirm(false)}>Cancel</button>
-            <button class="btn btn-danger" style={{ flex: 1 }} type="button" onClick={async () => { await deleteEverything(); setConfirm(false); navigate({ name: 'today' }, true); toast('All data deleted.'); }}>Delete</button>
+            <button class="btn btn-danger" style={{ flex: 1 }} type="button" disabled={deleting} onClick={async () => {
+              setDeleting(true);
+              try {
+                await deleteEverything();
+                setConfirm(false);
+                navigate({ name: 'today' }, true);
+                toast('All data deleted.');
+              } catch (e) {
+                setDeleteError(e instanceof CloudDeleteError && e.reason === 'offline'
+                  ? "You're offline, so the anonymised backup can't be deleted yet. Nothing has been deleted. Try again with signal."
+                  : "Couldn't reach the backup to delete it. Nothing has been deleted. Try again in a moment.");
+              } finally {
+                setDeleting(false);
+              }
+            }}>{deleting ? 'Deleting…' : 'Delete'}</button>
           </>}>
-          <Banner tone="danger">This removes your squad, sessions, cards and reports from this phone{synced ? ', and the anonymised backups' : ''}. It can't be undone. Export first if you want a copy.</Banner>
+          <div class="stack-sm">
+            <Banner tone="danger">This removes your squad, sessions, cards and reports from this phone{s.syncEnabled || synced ? ', and every anonymised backup in Firestore' : ''}. It can't be undone. Export first if you want a copy.</Banner>
+            {deleteError && <Banner tone="warn">{deleteError}</Banner>}
+          </div>
         </Sheet>
       )}
     </Shell>
