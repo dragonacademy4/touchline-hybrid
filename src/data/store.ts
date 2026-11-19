@@ -19,6 +19,8 @@ export const loadError = signal<string | null>(null);
 export const online = signal(typeof navigator === 'undefined' ? true : navigator.onLine);
 export const nano = signal<NanoStatus>('unsupported');
 export const nanoProgress = signal<number | null>(null);
+/** When the last AI call failed (not cancelled). Cleared by the next success. */
+export const aiFailedAt = signal<number | null>(null);
 
 export const activePlayers = computed(() => players.value.filter((p) => !p.archived).sort((a, b) => a.name.localeCompare(b.name)));
 export const groups = computed(() => {

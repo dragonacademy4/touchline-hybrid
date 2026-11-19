@@ -33,12 +33,12 @@ export function friendlyError(e: unknown): FriendlyError {
   if (/offline|network|failed to fetch|ERR_INTERNET/i.test(msg)) {
     // The phone says it's online, so the AI service itself couldn't be reached.
     if (typeof navigator !== 'undefined' && navigator.onLine === true) {
-      return { kind: 'offline', title: "Couldn't reach the AI service", detail: 'Your notes are saved on this phone. Try again in a moment, or save without AI.', retry: true };
+      return { kind: 'offline', title: "Couldn't reach the AI service", detail: 'Your notes are saved on this phone. Try again in a moment.', retry: true };
     }
     return { kind: 'offline', title: 'No signal', detail: 'Your notes are saved on this phone. Try again when you have signal.', retry: true };
   }
   if (/AbortError|timeout has expired|timed out/i.test(msg)) {
-    return { kind: 'quota', title: 'The cloud took too long', detail: 'Your notes are saved. Try again in a moment, or save without AI.', retry: true };
+    return { kind: 'quota', title: 'The cloud took too long', detail: 'Your notes are saved. Try again in a moment.', retry: true };
   }
   if (/\b429\b|quota|resource.?exhausted|rate.?limit|too many requests/i.test(msg)) {
     return { kind: 'quota', title: 'The cloud model is busy', detail: 'Too many requests right now. Wait a minute and try again.', retry: true };

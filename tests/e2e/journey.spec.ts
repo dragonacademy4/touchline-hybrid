@@ -27,7 +27,7 @@ test('main journey with the cloud fallback: capture, structure, card, parent upd
   await expect(page.locator('[data-source="in_cloud"]').first()).toBeVisible();
   await expect(page.getByText('Brilliant effort today, Ollie!')).toBeVisible();
   await expect(page.getByText('Amara showed real bravery on the ball.')).toBeVisible();
-  await page.getByText('What the model saw').click();
+  await page.getByText('What the cloud saw').click();
   const peek = page.getByLabel('Exact text sent to the model');
   await expect(peek).toContainText('[P01] scored with his left foot and helped [P12] up');
   await expect(peek).not.toContainText('Ollie');
@@ -51,7 +51,7 @@ test('main journey with the cloud fallback: capture, structure, card, parent upd
   await page.goto('/#/updates');
   await page.getByRole('button', { name: "Write this week's update" }).click();
   await expect(page.getByRole('heading', { name: 'A busy week for the group' })).toBeVisible();
-  await expect(page.getByText(/Ollie:\s*Ollie was brave in the duels/)).toBeVisible();
+  await expect(page.getByText(/^Ollie was brave in the duels/)).toBeVisible();
   await page.getByText('What the cloud saw').first().click();
   await expect(page.getByLabel('Exact text sent to the cloud').first()).not.toContainText('Ollie');
   await page.screenshot({ path: `${shotDir}/${w}-06-update.png`, fullPage: true });

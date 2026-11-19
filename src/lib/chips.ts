@@ -55,7 +55,7 @@ export function observationFromChips(note: PlayerNote, name: string): PlayerObse
   return {
     playerId: note.playerId,
     strength: strengths.length ? capitalise(joinPhrases(strengths)) + '.' : 'Took part in today\'s session.',
-    nextStep: workOns.length ? `Keep working on ${joinPhrases(workOns)}.` : 'Keep building on this next week.',
+    nextStep: workOns.length ? `Keep working on ${joinPhrases(workOns)}.` : 'Keep it up at the next session.',
     praise: strengths.length ? `Well done ${name}, ${joinPhrases(strengths)} today!` : `Thanks for your effort today, ${name}!`,
   };
 }

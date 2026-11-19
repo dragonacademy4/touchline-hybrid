@@ -139,8 +139,8 @@ describe('chipsOnlySession', () => {
         nextStep: 'Keep working on using their weaker foot more.',
         praise: 'Well done Ollie, bravery on the ball today!',
       },
-      { playerId: 'p3', strength: "Took part in today's session.", nextStep: 'Keep building on this next week.', praise: 'Thanks for your effort today, Freya!' },
-      { playerId: 'gone', strength: 'Real effort.', nextStep: 'Keep building on this next week.', praise: 'Well done Player, real effort today!' },
+      { playerId: 'p3', strength: "Took part in today's session.", nextStep: 'Keep it up at the next session.', praise: 'Thanks for your effort today, Freya!' },
+      { playerId: 'gone', strength: 'Real effort.', nextStep: 'Keep it up at the next session.', praise: 'Well done Player, real effort today!' },
     ]);
     expect(out.flags).toEqual([{ playerId: 'p6', kind: 'welfare', note: 'Kai took a knock. Check in with their parent or carer.' }]);
   });
@@ -572,5 +572,22 @@ describe('progressReport', () => {
   it('throws ParseError when progress is empty', async () => {
     const { run } = fakeRunner('{"headline":"Hi"}');
     await expect(progressReport(ollie, TODAY, fixtures(), squad, cfg, ONLINE_NANO, run)).rejects.toBeInstanceOf(ParseError);
+  });
+});
+
+describe('localParentUpdate', () => {
+  it('builds the update from the week\'s focus and each child\'s latest did-well line, with no model', async () => {
+    const { localParentUpdate } = await import('../../src/ai/engine');
+    const week = [
+      session({ id: 'a', date: '2026-11-16', group: 'U9', focus: 'Passing', structured: structured([obs('p1', 'Ollie passed well.')]) }),
+      session({ id: 'b', date: '2026-11-18', group: 'U9', focus: '1v1 attacking', structured: structured([obs('p1', 'Ollie beat his man.'), obs('p2', 'Amara scored.')]) }),
+    ];
+    const r = localParentUpdate('U9', '2026-11-19', week, squad);
+    expect(r.source).toBe('notes');
+    expect(r.model).toBe('none');
+    expect(r.sentText).toBe('');
+    expect(r.body).toBe("This week the group worked on passing and 1v1 attacking. Here's something each player did well.");
+    expect(r.items).toEqual([{ playerId: 'p1', text: 'Ollie beat his man.' }, { playerId: 'p2', text: 'Amara scored.' }]);
+    expect(() => localParentUpdate('U9', '2026-12-30', week, squad)).toThrow('No structured sessions');
   });
 });

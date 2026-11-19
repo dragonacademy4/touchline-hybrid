@@ -140,7 +140,7 @@ export function SettingsScreen() {
             <li><strong>Names become codes first.</strong> On this phone, every squad name becomes a code like P03, and you're asked about any other names before anything is sent.</li>
             <li><strong>Session notes: on the phone where possible.</strong> With Gemini Nano in Chrome, Firebase AI Logic structures notes on the device, even with no signal. Without it, the same request goes to Gemini in the cloud, still as codes.</li>
             <li><strong>Parent updates and progress: in the cloud.</strong> Longer writing across weeks runs on a cloud Gemini model, with codes, back in signal.</li>
-            <li><strong>Names come back on the phone.</strong> Every result says where it ran, and "What the model saw" shows the exact text that was sent.</li>
+            <li><strong>Names come back on the phone.</strong> Every result says where it ran, and "What the cloud saw" shows the exact text that was sent.</li>
           </ol>
         </section>
 

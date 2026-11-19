@@ -1,5 +1,5 @@
 import { useEffect, useMemo, useRef, useState } from 'preact/hooks';
-import { conditions, players, removeSession, restoreSession, saveSession, sessions, setStructured, settings, tick, toast, getRunner, getPrompts } from '../../data/store';
+import { aiFailedAt, conditions, players, removeSession, restoreSession, saveSession, sessions, setStructured, settings, tick, toast, getRunner, getPrompts } from '../../data/store';
 import { CHIPS, type ChipKind } from '../../lib/chips';
 import { shortDate } from '../../lib/dates';
 import type { Player, PlayerNote, Session } from '../../lib/types';
@@ -204,6 +204,13 @@ function NoteSheet(props: { session: Session; player: Player; squad: Player[]; o
         </>
       }>
       <div class="stack">
+        <label class="switch-row" style={{ minHeight: '48px' }}>
+          <span><strong>Here today</strong></span>
+          <span class="switch">
+            <input type="checkbox" role="switch" checked={present} onChange={(e) => setPresent((e.target as HTMLInputElement).checked)} />
+            <span aria-hidden="true" />
+          </span>
+        </label>
         {(['strength', 'work_on', 'welfare'] as ChipKind[]).map((kind) => (
           <div key={kind}>
             <p class="chip-group-label">{KIND_LABEL[kind]}</p>
@@ -230,13 +237,7 @@ function NoteSheet(props: { session: Session; player: Player; squad: Player[]; o
             <IconMic /> {voice === 'listening' ? 'Listening on this phone… tap to stop' : 'Speak a note (on this phone)'}
           </button>
         )}
-        <label class="switch-row" style={{ minHeight: '48px' }}>
-          <span><strong>Here today</strong></span>
-          <span class="switch">
-            <input type="checkbox" role="switch" checked={present} onChange={(e) => setPresent((e.target as HTMLInputElement).checked)} />
-            <span aria-hidden="true" />
-          </span>
-        </label>
+
       </div>
     </Sheet>
   );
@@ -301,12 +302,14 @@ export function StructureSheet({ session, onClose }: { session: Session; onClose
         setStep('restore');
         await new Promise((r) => setTimeout(r, Math.max(0, 1500 - (Date.now() - started)) + 350));
         await setStructured(session.id, structured);
+        aiFailedAt.value = null;
         if (!live) return;
         setStep('done');
         navigate({ name: 'review', id: session.id }, true);
       } catch (e) {
         if (e instanceof SendCancelled) return onClose();
         console.warn('Structuring failed:', e instanceof Error ? e.name : 'error');
+        aiFailedAt.value = Date.now();
         if (live) setError(friendlyError(e));
       }
     })();

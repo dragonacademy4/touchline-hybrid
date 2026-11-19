@@ -1,5 +1,5 @@
 import { useEffect, useState } from 'preact/hooks';
-import { conditions, players, saveSession, sessions, syncNow } from '../../data/store';
+import { aiFailedAt, conditions, players, saveSession, sessions, syncNow } from '../../data/store';
 import { shortDate } from '../../lib/dates';
 import type { PlayerObservation, Session } from '../../lib/types';
 import { planSessionRun } from '../../ai/engine';
@@ -44,12 +44,17 @@ export function Review({ id }: { id: string }) {
           <SourceBadge source={st.source} />
         </div>
 
-        {canUpgrade && (
-          <Banner tone="info" title="AI is available now" icon={<IconSparkle />}
+        {canUpgrade && (aiFailedAt.value && Date.now() - aiFailedAt.value < 5 * 60_000 ? (
+          <Banner tone="warn" title="AI couldn't be reached just now"
+            action={<button class="btn btn-secondary" type="button" onClick={() => setRerun(true)}>Try AI again</button>}>
+            These notes were saved from your chips. You can try again now or later.
+          </Banner>
+        ) : (
+          <Banner tone="info" title="AI can write this up now" icon={<IconSparkle />}
             action={<button class="btn btn-primary" type="button" onClick={() => setRerun(true)}>Structure with AI</button>}>
             These notes were saved from your chips without AI. Turn them into proper feedback now.
           </Banner>
-        )}
+        ))}
 
         {st.summary && (
           <section class="card" aria-labelledby="sum-h">
@@ -101,7 +106,7 @@ export function Review({ id }: { id: string }) {
 
         {st.sentText && (
           <details class="disclosure card">
-            <summary><IconChevron class="chev-r" /> What the {st.source === 'on_device' ? 'on-device model' : 'model'} saw</summary>
+            <summary><IconChevron class="chev-r" /> {st.source === 'on_device' ? 'What the on-device model saw' : 'What the cloud saw'}</summary>
             <p class="small muted" style={{ margin: '4px 0 10px' }}>
               Names were swapped for tokens on this phone before {st.source === 'on_device' ? 'Gemini Nano' : `the cloud model (${st.model})`} saw this. The token list never leaves the phone.
             </p>
@@ -110,6 +115,7 @@ export function Review({ id }: { id: string }) {
         )}
 
         <div class="row wrap">
+          <a class="btn btn-primary" href="#/">Done</a>
           <a class="btn btn-secondary" href={href({ name: 'session', id: session.id })}><IconEdit /> Edit notes</a>
           {plan.kind === 'model' && st.source !== 'chips' && !session.demo && (
             <button class="btn btn-ghost" type="button" onClick={() => setRerun(true)}>

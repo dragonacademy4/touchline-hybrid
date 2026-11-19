@@ -83,7 +83,7 @@ export function StatusPills() {
     return (
       <a class="pill pill-offline" href="#/settings" title={ai.title} aria-label={`Offline. AI: ${ai.title}`}>
         <IconWifiOff />
-        <span class="pill-label">Offline · {ai.label.toLowerCase()}</span>
+        <span class="pill-label">Offline<span class="hide-narrow"> · {ai.label.toLowerCase()}</span></span>
       </a>
     );
   }
@@ -101,6 +101,7 @@ const SOURCE: Record<Source, { cls: string; label: string; icon: (p: object) => 
   on_device: { cls: 'badge-device', label: 'On this device', icon: IconPhone },
   in_cloud: { cls: 'badge-cloud', label: 'In the cloud · names hidden', icon: IconEyeOff },
   chips: { cls: 'badge-chips', label: 'From your chips · no AI', icon: IconTag },
+  notes: { cls: 'badge-chips', label: 'From your notes · no AI', icon: IconTag },
   demo: { cls: 'badge-demo', label: 'Demo session', icon: IconInfo },
   coach: { cls: 'badge-coach', label: 'Written by you', icon: IconTag },
 };

@@ -21,7 +21,7 @@ export function useSendCheck(): { confirm: ConfirmSend; pending: Pending | null;
 
 function CheckPanel({ pending }: { pending: Pending }) {
   const [hide, setHide] = useState<string[]>(pending.suspects);
-  const [always, setAlways] = useState(true);
+  const [always, setAlways] = useState(false);
   const toggle = (w: string) => setHide((h) => (h.includes(w) ? h.filter((x) => x !== w) : [...h, w]));
   const send = async () => {
     if (always && hide.length) {
@@ -48,7 +48,7 @@ function CheckPanel({ pending }: { pending: Pending }) {
       </div>
       <label class="row small" style={{ minHeight: '44px' }}>
         <input type="checkbox" checked={always} onChange={(e) => setAlways((e.target as HTMLInputElement).checked)} style={{ width: '20px', height: '20px' }} />
-        Always hide the ticked words (you can change this in Settings)
+        Also hide these words in future (Settings → Also hide these words)
       </label>
       <details class="disclosure">
         <summary>Show the text before hiding</summary>

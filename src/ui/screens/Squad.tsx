@@ -67,6 +67,8 @@ export function Squad() {
   );
 }
 
+const cap = (s: string) => s.replace(/(^|[\s-])(\p{L})/gu, (_, a: string, b: string) => a + b.toUpperCase());
+
 export function PlayerSheet({ player, onClose }: { player: Player | null; onClose: () => void }) {
   const [name, setName] = useState(player?.name ?? '');
   const [aliases, setAliases] = useState(player?.aliases.join(', ') ?? '');
@@ -79,7 +81,11 @@ export function PlayerSheet({ player, onClose }: { player: Player | null; onClos
   const submit = async (e: Event) => {
     e.preventDefault();
     const n = name.trim();
-    if (n.length < 2) return setError('Enter a name with at least 2 letters.');
+    if ((n.match(/\p{L}/gu) ?? []).length < 2) return setError('Enter a first name with at least 2 letters.');
+    const words = n.split(/\s+/);
+    if (words.length > 1 && [...words[0].replace(/[.'’-]/g, '')].length < 2) {
+      return setError(`Start with the first name, e.g. "${cap(words.slice(1).join(' '))} ${words[0].toUpperCase().replace(/\.$/, '')}".`);
+    }
     // "Sam B" is fine; "Zara O'Connor" looks like a surname. Warn once, then accept.
     const extra = n.split(/\s+/).slice(1).find((w) => w.replace(/[.'’-]/g, '').length >= 3);
     if (extra && surnameOk.current !== n) {
@@ -88,7 +94,7 @@ export function PlayerSheet({ player, onClose }: { player: Player | null; onClos
     }
     if (!group.trim()) return setError('Enter a group, e.g. Under 9s.', 'group');
     const clash = activePlayers.value.find((p) => p.id !== player?.id && p.name.toLowerCase() === n.toLowerCase() && p.group === group.trim());
-    if (clash) return setError(`There's already ${/^[aeiou]/i.test(clash.name) ? 'an' : 'a'} ${clash.name} in ${clash.group}. Add an initial, e.g. "${n} B".`);
+    if (clash) return setError(`There's already ${/^[aeiou]/i.test(clash.name) ? 'an' : 'a'} ${clash.name} in ${clash.group}. Add an initial, e.g. "${cap(n)} B".`);
     await savePlayer({ id: player?.id, name: n, aliases: cleanAliases(aliases), group });
     if (keepAdding.current) {
       toast(`${n} added.`);

@@ -3,7 +3,7 @@ export const URL='https://touchline.impactlayer.workers.dev/';
 export const OUT='/home/dylan/cloud-work/projects/comp-touchline/qa/review2/';
 export async function setup({width=375,height=812,scheme='light',tag=''}={}){
   const b = await chromium.launch({ channel: 'chrome' });
-  const ctx = await b.newContext({ viewport: { width, height }, deviceScaleFactor: width<500?2:1, colorScheme:scheme, acceptDownloads:true, permissions:['clipboard-read','clipboard-write'] });
+  const ctx = await b.newContext({ bypassCSP:true, viewport: { width, height }, deviceScaleFactor: width<500?2:1, colorScheme:scheme, acceptDownloads:true, permissions:['clipboard-read','clipboard-write'] });
   const p = await ctx.newPage();
   const errs=[]; p.on('console',m=>{if(['error','warning'].includes(m.type()))errs.push(m.text())}); p.on('pageerror',e=>errs.push(String(e)));
   const reqs=[]; p.on('request',r=>{const u=r.url(); if(!u.includes('touchline.impactlayer')) reqs.push(r.method()+' '+u.slice(0,120)+((r.postData()&&/vertexai|firestore/.test(u))? ' BODY:'+r.postData().slice(0,6000):''));});

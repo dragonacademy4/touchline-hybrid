@@ -1,4 +1,4 @@
-import { expect, mockFirebase, startDemo, startSession, test } from './fixtures';
+import { addNote, expect, mockFirebase, startDemo, startSession, test } from './fixtures';
 
 test('Escape on a note sheet keeps the latest edits', async ({ page }) => {
   await mockFirebase(page);
@@ -66,4 +66,40 @@ test('with backup off, delete everything works offline', async ({ page, context 
   await page.getByRole('dialog').getByRole('button', { name: 'Delete', exact: true }).click();
   await expect(page.getByRole('button', { name: 'Try the demo squad' })).toBeVisible();
   await context.setOffline(false);
+});
+
+test('parent update: when the cloud fails, "Write it without AI" gives an honest local update', async ({ page }) => {
+  await mockFirebase(page, '500');
+  await startDemo(page);
+  await page.goto('/#/updates');
+  await page.getByRole('button', { name: "Write this week's update" }).click();
+  await page.getByRole('button', { name: 'Write it without AI' }).click({ timeout: 45_000 });
+  await expect(page.getByRole('heading', { name: 'This week at training' })).toBeVisible();
+  await expect(page.locator('[data-source="notes"]').first()).toBeVisible();
+  await expect(page.getByText('What the cloud saw')).toHaveCount(0);
+});
+
+test('after AI fails and notes are saved without AI, the app does not claim AI is available', async ({ page }) => {
+  await mockFirebase(page, '500');
+  await startDemo(page);
+  await startSession(page);
+  await addNote(page, 'Isla', ['Brave']);
+  await page.getByRole('button', { name: 'Structure in the cloud' }).click();
+  await page.getByRole('button', { name: 'Save without AI' }).click({ timeout: 45_000 });
+  await expect(page.getByText("AI couldn't be reached just now")).toBeVisible();
+  await expect(page.getByText('AI can write this up now')).toHaveCount(0);
+});
+
+test('name validation: digits and a leading initial are refused with a helpful example', async ({ page }) => {
+  await mockFirebase(page);
+  await startDemo(page);
+  await page.goto('/#/squad');
+  await page.getByRole('button', { name: 'Add player' }).click();
+  const d = page.getByRole('dialog', { name: 'Add a player' });
+  await d.getByRole('textbox', { name: /First name/ }).fill('12');
+  await d.getByRole('button', { name: 'Save', exact: true }).click();
+  await expect(d.getByRole('alert')).toHaveText('Enter a first name with at least 2 letters.');
+  await d.getByRole('textbox', { name: /First name/ }).fill('a ollie');
+  await d.getByRole('button', { name: 'Save', exact: true }).click();
+  await expect(d.getByRole('alert')).toHaveText('Start with the first name, e.g. "Ollie A".');
 });

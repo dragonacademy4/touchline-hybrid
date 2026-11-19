@@ -101,6 +101,11 @@ export async function renderCardPng(d: CardData): Promise<Blob> {
     ctx.font = `700 ${size}px "Barlow Condensed", sans-serif`;
   }
   ctx.fillText(d.name, left - 6, y - 140);
+  ctx.fillStyle = 'rgba(245,243,236,0.55)';
+  ctx.font = '700 26px "Barlow Condensed", sans-serif';
+  ctx.textAlign = 'right';
+  ctx.fillText('TOUCHLINE', W - 80, H - 44);
+  ctx.textAlign = 'left';
   return new Promise((res, rej) => c.toBlob((b) => (b ? res(b) : rej(new Error('Could not draw the card'))), 'image/png'));
 }
 

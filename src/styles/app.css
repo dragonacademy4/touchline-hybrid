@@ -365,3 +365,19 @@ details.disclosure[open] > summary svg.chev-r { transform: rotate(90deg); }
 
 /* With a sheet open, toasts sit at the top so they never cover its buttons. */
 body:has(.sheet) .toasts { bottom: auto; top: calc(12px + env(safe-area-inset-top)); }
+
+@media (max-width: 420px) {
+  .hide-narrow { display: none; }
+}
+
+/* Desktop: the tab bar becomes a left navigation rail. */
+@media (min-width: 1100px) {
+  .shell:has(.tabbar) { padding-left: 220px; }
+  .tabbar { top: 0; bottom: 0; right: auto; width: 220px; border-top: 0; border-right: 1px solid var(--rule); padding: calc(76px + env(safe-area-inset-top)) var(--sp-3) var(--sp-4); }
+  .tabbar-inner { display: flex; flex-direction: column; gap: var(--sp-1); max-width: none; }
+  .tab { flex-direction: row; justify-content: flex-start; gap: var(--sp-3); min-height: 48px; padding: 0 var(--sp-4); border-radius: var(--r-md); font-size: var(--fs-body); }
+  .tab:hover { background: var(--surface-2); }
+  .tab[aria-current='page'] { background: var(--surface-2); }
+  main { padding-bottom: var(--sp-12); }
+  .toasts { bottom: calc(24px + env(safe-area-inset-bottom)); padding-left: 220px; }
+}

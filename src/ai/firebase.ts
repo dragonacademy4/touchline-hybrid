@@ -87,8 +87,11 @@ export async function remotePrompts(): Promise<Prompts> {
 
 // ---------- Hybrid inference ----------
 
-/** A cloud call that takes longer than this is abandoned (and the fallback model tried). */
-const CLOUD_TIMEOUT_MS = 25_000;
+/**
+ * A cloud call that takes longer than this is abandoned and the fallback model
+ * tried. Flash-Lite normally answers in 1-5 s, so two attempts stay under ~30 s.
+ */
+const CLOUD_TIMEOUT_MS = 14_000;
 /** Gemini Nano can be slow on modest hardware, so it gets longer. */
 const ON_DEVICE_TIMEOUT_MS = 90_000;
 

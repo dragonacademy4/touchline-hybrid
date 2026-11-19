@@ -10,7 +10,7 @@ test('own squad from scratch: empty states, add, validate, duplicate, edit, remo
   await page.getByRole('button', { name: 'Add a player' }).click();
   const dialog = page.getByRole('dialog', { name: 'Add a player' });
   await dialog.getByRole('button', { name: 'Save', exact: true }).click();
-  await expect(dialog.getByRole('alert')).toHaveText('Enter a name with at least 2 letters.');
+  await expect(dialog.getByRole('alert')).toHaveText('Enter a first name with at least 2 letters.');
   await dialog.getByRole('textbox', { name: 'First name' }).fill('Sam B');
   await dialog.getByRole('button', { name: 'Save', exact: true }).click();
   await expect(dialog.getByRole('alert')).toHaveText('Enter a group, e.g. Under 9s.');

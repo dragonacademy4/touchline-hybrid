@@ -1,5 +1,5 @@
 /** Where a piece of text came from. Drives the badge shown next to it. */
-export type Source = 'on_device' | 'in_cloud' | 'chips' | 'demo' | 'coach';
+export type Source = 'on_device' | 'in_cloud' | 'chips' | 'notes' | 'demo' | 'coach';
 
 export interface Player {
   id: string;

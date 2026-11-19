@@ -130,6 +130,7 @@ test('check before it goes: names outside the squad are caught and hidden before
   await expect(check.getByRole('button', { name: 'Sarah Jones' })).toHaveAttribute('aria-pressed', 'true');
   expect(log.requests.filter((r) => r.url.includes('firebasevertexai'))).toEqual([]);
   await page.screenshot({ path: `${QA}/e2e/${info.project.name}-09-check-before-send.png` });
+  await check.getByRole('checkbox', { name: /Also hide these words in future/ }).check();
   await check.getByRole('button', { name: 'Hide 2 and send' }).click();
   await expect(page).toHaveURL(/\/review$/);
   const body = log.requests.find((r) => r.url.includes('firebasevertexai'))!.body;

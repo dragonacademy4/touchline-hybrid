@@ -20,7 +20,7 @@ describe('observationFromChips', () => {
     expect(observationFromChips(note('a', ['brave']), 'Ollie')).toEqual({
       playerId: 'a',
       strength: 'Bravery on the ball.',
-      nextStep: 'Keep building on this next week.',
+      nextStep: 'Keep it up at the next session.',
       praise: 'Well done Ollie, bravery on the ball today!',
     });
     expect(observationFromChips(note('a', ['brave', 'effort']), 'Ollie')!.strength).toBe('Bravery on the ball and real effort.');
@@ -39,7 +39,7 @@ describe('observationFromChips', () => {
     expect(observationFromChips(note('a', [], '  dad moved out, mum Sarah Jones collected  '), 'Kai')).toEqual({
       playerId: 'a',
       strength: "Took part in today's session.",
-      nextStep: 'Keep building on this next week.',
+      nextStep: 'Keep it up at the next session.',
       praise: 'Thanks for your effort today, Kai!',
     });
     // Work-on chips alone, no text: a plain, true line rather than an empty strength.

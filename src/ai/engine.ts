@@ -343,6 +343,37 @@ export async function parentUpdate(
   };
 }
 
+/**
+ * The weekly update without any model: the week's focus and each child's
+ * latest "did well" line, exactly as already reviewed by the coach. Used when
+ * the cloud can't be reached.
+ */
+export function localParentUpdate(group: string, anyDay: string, sessions: Session[], players: Player[]): CloudReport {
+  const week = sessionsInWeek(sessions, group, anyDay);
+  if (!week.length) throw new NotEnoughData('No structured sessions for this group this week yet.');
+  const from = weekStart(anyDay);
+  const focuses = [...new Set(week.map((s) => s.focus.trim()).filter(Boolean))];
+  const known = new Set(players.filter((p) => !p.erased).map((p) => p.id));
+  const latest = new Map<string, string>();
+  for (const s of week) for (const o of s.structured!.observations) if (known.has(o.playerId)) latest.set(o.playerId, o.strength);
+  const list = focuses.map((f) => f[0].toLowerCase() + f.slice(1));
+  const topics = list.length <= 1 ? list[0] : `${list.slice(0, -1).join(', ')} and ${list[list.length - 1]}`;
+  return {
+    id: `pu-${group}-${from}`,
+    kind: 'parent_update',
+    subject: group,
+    period: from,
+    title: 'This week at training',
+    body: topics ? `This week the group worked on ${topics}. Here's something each player did well.` : "Here's something each player did well this week.",
+    items: [...latest].map(([playerId, text]) => ({ playerId, text })),
+    source: 'notes',
+    sentText: '',
+    receivedText: '',
+    model: 'none',
+    createdAt: Date.now(),
+  };
+}
+
 export const PROGRESS_DAYS = 28;
 
 /** 4-week progress for one player. Always runs in the cloud, with names hidden. */

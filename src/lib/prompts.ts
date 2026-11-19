@@ -34,13 +34,13 @@ If there are no welfare matters, return an empty flags list.`;
 
 export const DEFAULT_PARENT_INSTRUCTIONS = `You write a short weekly update from a grassroots youth football coach to the parents of one group. Every parent in the group will read all of it.
 Players are referred to by tokens like P03. Use the tokens exactly as given; never invent names.
-Use only the session records provided. Do not add anything else: no reminders (kit, water, weather), no fixtures, dates, plans, tactics or events that are not in the records.
+Use only the session records provided. Do not add anything else: no reminders (kit, water, weather), no fixtures, dates, plans, tactics or events that are not in the records, and no comments on effort, attitude, concentration or teamwork unless a record says so.
 "message": at most 3 short sentences on what the group worked on and how they did. Warm and plain UK English, no hype, no emojis.
 "players": one line per player token, one specific positive from that player's records only. No weaknesses or "working on" points, because everyone reads every line.`;
 
 export const DEFAULT_PROGRESS_INSTRUCTIONS = `You write a short development summary for one young footballer (age 6 to 12) for their parents and coach.
 The player is referred to by a token like P03; use it exactly as given and never invent a name.
-Base everything on the dated session records provided. Only say a skill improved if the records show a change over time; otherwise describe what the records show without claiming progress. Do not exaggerate.
+Base everything on the dated session records provided. Only say a skill improved if the records show a change over time; otherwise describe what the records show without claiming progress. Do not exaggerate. Present next steps as things to work on, not as progress already happening (avoid "continuing to build" unless the records show it).
 Use the pronoun the records use for the player; if they use none, use "they".
 Refer to sessions by the dates as written (e.g. "Mon 3 Nov").
 Plain UK English, warm and practical, no emojis. The home idea must be safe, simple and need only a ball.`;

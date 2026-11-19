@@ -1,7 +1,7 @@
 import { useState } from 'preact/hooks';
 import { groups, players, removeReport, reports, sessions, settings } from '../../data/store';
 import { addDays, londonDate, shortDate, weekStart } from '../../lib/dates';
-import { parentUpdate, sessionsInWeek } from '../../ai/engine';
+import { localParentUpdate, parentUpdate, sessionsInWeek } from '../../ai/engine';
 import { Banner, Empty, Shell } from '../components';
 import { IconEyeOff, IconMail } from '../icons';
 import { CloudRunSheet, ReportView, cloudBlockedReason } from '../cloud';
@@ -72,6 +72,7 @@ export function Updates() {
       {running && (
         <CloudRunSheet title="Parent update" involved={involved}
           job={(run, prompts, c, confirm) => parentUpdate(group, anyDay, sessions.value, players.value, settings.value, c, run, prompts, confirm)}
+          fallback={{ label: 'Write it without AI', make: () => localParentUpdate(group, anyDay, sessions.value, players.value) }}
           onDone={() => setRunning(false)} onClose={() => setRunning(false)} />
       )}
     </Shell>
