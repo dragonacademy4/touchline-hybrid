@@ -1,0 +1,81 @@
+/* Chalkline tokens. Screen styles use these variables only. */
+:root {
+  color-scheme: light;
+  --ground: #f5f3ec;
+  --surface: #ffffff;
+  --surface-2: #ece9df;
+  --ink: #123b2c;
+  --ink-muted: #5b6b63;
+  --rule: #d9d5c7;
+  --rule-strong: #b9b4a3;
+  --accent: #c2410c;
+  --accent-ink: #ffffff;
+  --accent-soft: #fbe3d6;
+  --device: #1e6b4a;
+  --device-ink: #ffffff;
+  --device-soft: #dcefe4;
+  --cloud: #3a4e8c;
+  --cloud-ink: #ffffff;
+  --cloud-soft: #e1e6f5;
+  --neutral: #5b6b63;
+  --neutral-soft: #e6e3d8;
+  --gold: #b08423;
+  --gold-soft: #f6ead0;
+  --danger: #b42318;
+  --danger-soft: #fde4e1;
+  --warn: #8a5a00;
+  --warn-soft: #fbedc9;
+  --focus: #1d4ed8;
+  --shadow: 0 1px 2px rgba(18, 59, 44, 0.08), 0 4px 16px rgba(18, 59, 44, 0.06);
+
+  --font-display: 'Barlow Condensed', 'Arial Narrow', system-ui, sans-serif;
+  --font-body: 'Atkinson Hyperlegible', system-ui, -apple-system, 'Segoe UI', sans-serif;
+  --fs-caption: 0.75rem;  /* 12 */
+  --fs-small: 0.875rem;   /* 14 */
+  --fs-body: 1rem;        /* 16 */
+  --fs-lead: 1.125rem;    /* 18 */
+  --fs-title: 1.375rem;   /* 22 */
+  --fs-headline: 1.875rem;/* 30 */
+  --fs-hero: 2.75rem;     /* 44 */
+
+  --sp-1: 4px; --sp-2: 8px; --sp-3: 12px; --sp-4: 16px; --sp-5: 20px; --sp-6: 24px; --sp-8: 32px; --sp-10: 40px; --sp-12: 48px;
+  --pad: 16px;
+  --r-sm: 8px; --r-md: 14px; --r-lg: 22px; --r-pill: 999px;
+  --tap: 48px;
+  --maxw: 720px;
+  --ease: cubic-bezier(0.2, 0.7, 0.2, 1);
+}
+
+@media (min-width: 768px) {
+  :root { --pad: 20px; }
+}
+
+:root[data-theme='dark'] {
+  color-scheme: dark;
+  --ground: #0f1c17;
+  --surface: #172820;
+  --surface-2: #1f342a;
+  --ink: #e8ede9;
+  --ink-muted: #9db0a6;
+  --rule: #2a4136;
+  --rule-strong: #3d5a4c;
+  --accent: #ff7a3d;
+  --accent-ink: #0f1c17;
+  --accent-soft: #3a2418;
+  --device: #6fd3a0;
+  --device-ink: #0f1c17;
+  --device-soft: #1d3a2c;
+  --cloud: #8ea2e8;
+  --cloud-ink: #0f1c17;
+  --cloud-soft: #232c4a;
+  --neutral: #9db0a6;
+  --neutral-soft: #24382e;
+  --gold: #e2b84f;
+  --gold-soft: #3a3020;
+  --danger: #ff8a7a;
+  --danger-soft: #3d1f1c;
+  --warn: #f2c14e;
+  --warn-soft: #3a3019;
+  --focus: #8ab4ff;
+  --shadow: none;
+}
