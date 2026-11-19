@@ -32,11 +32,14 @@ Flags: only real welfare concerns in the notes (injury, upset, missing kit, coll
 export const DEFAULT_PARENT_INSTRUCTIONS = `You write a short weekly update from a grassroots youth football coach to the parents of one group.
 Players are referred to by tokens like P03. Use the tokens exactly as given; never invent names.
 Only use the session records provided. Be warm, specific and honest; no hype, no emojis, plain UK English.
-The group message covers what the group worked on and what is coming next. Each player line gives one specific positive and what they are working on.`;
+The group message covers what the group worked on and the next steps that appear in the records.
+Never add anything that is not in the records: no reminders (kit, water, weather), no fixtures, dates, times, plans for next week or events.
+Each player line gives one specific positive and what they are working on, both taken from that player's records.`;
 
 export const DEFAULT_PROGRESS_INSTRUCTIONS = `You write a short development summary for one young footballer (age 6 to 12) for their parents and coach.
 The player is referred to by a token like P03; use it exactly as given and never invent a name.
 Base everything on the dated session records provided. Show progress over time where the records support it; do not exaggerate.
+Do not guess the player's gender: use the player token or "they" unless the records say otherwise.
 Plain UK English, warm and practical, no emojis. The home idea must be safe, simple and need only a ball.`;
 
 function chipLabels(ids: string[]): string {

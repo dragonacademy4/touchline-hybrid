@@ -17,6 +17,19 @@ export interface AnonymisedSession {
   source: 'on_device' | 'in_cloud' | 'manual';
 }
 
+const WORD_CHAR = /[\p{L}\p{M}\p{N}]/u;
+
+/**
+ * Cuts to `max` characters without leaving part of a word: cutting "Benchmark"
+ * to "Ben" would otherwise turn an ordinary word into a squad name and fail the
+ * leak check, blocking sync for that session.
+ */
+function clip(t: string, max: number): string {
+  if (t.length <= max) return t;
+  const cut = t.slice(0, max);
+  return WORD_CHAR.test(t[max]) ? cut.replace(/[\p{L}\p{M}\p{N}]+$/u, '') : cut;
+}
+
 export function anonymiseSession(session: Session, players: Player[], masker: Masker): AnonymisedSession | null {
   if (!session.structured || session.demo) return null;
   const tokenOf = new Map(players.map((p) => [p.id, p.token]));
@@ -26,13 +39,13 @@ export function anonymiseSession(session: Session, players: Player[], masker: Ma
   const record: AnonymisedSession = {
     v: 1,
     date: session.date,
-    group: m(session.group).slice(0, 40),
-    focus: m(session.focus).slice(0, 120),
+    group: clip(m(session.group), 40),
+    focus: clip(m(session.focus), 120),
     observations: session.structured.observations
       .filter((o) => tokenOf.has(o.playerId))
       .slice(0, 40)
       .map((o) => ({ token: tokenOf.get(o.playerId)!, strength: m(o.strength), nextStep: m(o.nextStep) })),
-    summary: m(session.structured.summary).slice(0, 2000),
+    summary: clip(m(session.structured.summary), 2000),
     source: src === 'on_device' || src === 'in_cloud' ? src : 'manual',
   };
   assertNoLeaks(masker, JSON.stringify(record));

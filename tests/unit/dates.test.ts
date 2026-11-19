@@ -92,7 +92,9 @@ describe('addDays', () => {
   });
 
   it('composes', () => {
-    fc.assert(fc.property(isoDay, offset, offset, (d, a, b) => expect(addDays(addDays(d, a), b)).toBe(addDays(d, a + b))));
+    fc.assert(fc.property(isoDay, offset, offset, (d, a, b) => {
+        expect(addDays(addDays(d, a), b)).toBe(addDays(d, a + b));
+      }));
   });
 
   it('steps one day at a time with no gaps or repeats', () => {

@@ -6,6 +6,7 @@ import { IconCopy, IconDownload, IconShare, IconStar } from '../icons';
 
 export interface CardData {
   name: string;
+  focus: string;
   group: string;
   date: string;
   praise: string;
@@ -53,6 +54,11 @@ export async function renderCardPng(d: CardData): Promise<Blob> {
   ctx.fillStyle = 'rgba(245,243,236,0.85)';
   ctx.font = '700 34px "Atkinson Hyperlegible", sans-serif';
   ctx.fillText(d.group.toUpperCase(), 80, 120);
+  if (d.focus) {
+    ctx.fillStyle = 'rgba(245,243,236,0.9)';
+    ctx.font = '600 56px "Barlow Condensed", sans-serif';
+    wrap(ctx, d.focus, W - 360).slice(0, 2).forEach((l, i) => ctx.fillText(l, 80, 196 + i * 60));
+  }
   // Star
   ctx.fillStyle = '#e2b84f';
   ctx.beginPath();
@@ -115,7 +121,7 @@ export function Card({ sessionId, playerId }: { sessionId: string; playerId: str
       </Shell>
     );
   }
-  const data: CardData = { name: player.name, group: session.group, date: shortDate(session.date), praise: obs.praise, nextStep: obs.nextStep };
+  const data: CardData = { name: player.name, focus: session.focus, group: session.group, date: shortDate(session.date), praise: obs.praise, nextStep: obs.nextStep };
   const fileName = `${player.name.replace(/[^\p{L}\p{N}]+/gu, '-')}-${session.date}.png`;
   const canShareFiles = typeof navigator.canShare === 'function';
 
@@ -164,6 +170,7 @@ export function Card({ sessionId, playerId }: { sessionId: string; playerId: str
             <span class="pc-club">{session.group}</span>
             <IconStar class="pc-star" fill="currentColor" stroke="none" />
           </div>
+          {session.focus && <div class="pc-focus">{session.focus}</div>}
           <div class="pc-name">{player.name}</div>
           <div class="pc-date">{data.date}</div>
           <p class="pc-praise">{obs.praise}</p>

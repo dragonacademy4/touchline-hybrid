@@ -52,7 +52,7 @@ export function observationFromChips(note: PlayerNote, name: string): PlayerObse
   if (!strengths.length && !workOns.length && !note.text.trim()) return null;
   return {
     playerId: note.playerId,
-    strength: strengths.length ? capitalise(joinPhrases(strengths)) + '.' : note.text.trim(),
+    strength: strengths.length ? capitalise(joinPhrases(strengths)) + '.' : note.text.trim() || 'Took part in today\'s session.',
     nextStep: workOns.length ? `Keep working on ${joinPhrases(workOns)}.` : 'Keep building on this next week.',
     praise: strengths.length ? `Well done ${name}, ${joinPhrases(strengths)} today!` : `Thanks for your effort today, ${name}!`,
   };

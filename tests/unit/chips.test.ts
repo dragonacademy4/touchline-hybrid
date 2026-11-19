@@ -42,8 +42,8 @@ describe('observationFromChips', () => {
       nextStep: 'Keep building on this next week.',
       praise: 'Thanks for your effort today, Kai!',
     });
-    // Work-on chips alone, no text: strength is left empty.
-    expect(observationFromChips(note('a', ['shooting']), 'Kai')!.strength).toBe('');
+    // Work-on chips alone, no text: a plain, true line rather than an empty strength.
+    expect(observationFromChips(note('a', ['shooting']), 'Kai')!.strength).toBe("Took part in today's session.");
   });
 
   it('returns null for welfare-only, unknown or empty notes', () => {

@@ -7,6 +7,7 @@ import type { FirebaseApp } from 'firebase/app';
 import type { AI } from 'firebase/ai';
 import type { RemoteConfig } from 'firebase/remote-config';
 import { FIREBASE_CONFIG, RECAPTCHA_SITE_KEY, REMOTE_DEFAULTS, type RemoteKey } from './config';
+import { isModelMissing, isTimeout, isTransient, withRetry } from './retry';
 import { DEFAULT_PROMPTS, type ModelRunner, type Prompts, type RunRequest, type RunResult } from './engine';
 
 declare global {
@@ -25,9 +26,10 @@ export function getFirebaseApp(): Promise<FirebaseApp> {
     const debugToken = import.meta.env.VITE_APPCHECK_DEBUG_TOKEN;
     if (debugToken && !self.FIREBASE_APPCHECK_DEBUG_TOKEN) self.FIREBASE_APPCHECK_DEBUG_TOKEN = debugToken;
     if (RECAPTCHA_SITE_KEY || self.FIREBASE_APPCHECK_DEBUG_TOKEN) {
-      const { initializeAppCheck, ReCaptchaV3Provider } = await import('firebase/app-check');
+      // App Check is registered with reCAPTCHA Enterprise. A debug token (tests, local dev) replaces it.
+      const { initializeAppCheck, ReCaptchaEnterpriseProvider } = await import('firebase/app-check');
       initializeAppCheck(app, {
-        provider: new ReCaptchaV3Provider(RECAPTCHA_SITE_KEY || 'debug-only'),
+        provider: new ReCaptchaEnterpriseProvider(RECAPTCHA_SITE_KEY || 'debug-only'),
         isTokenAutoRefreshEnabled: true,
       });
     }
@@ -85,6 +87,9 @@ export async function remotePrompts(): Promise<Prompts> {
 
 // ---------- Hybrid inference ----------
 
+/** A cloud call that takes longer than this is abandoned (and the fallback model tried). */
+const CLOUD_TIMEOUT_MS = 25_000;
+
 const LANG = [{ type: 'text', languages: ['en'] }] as const;
 
 async function makeModel(req: RunRequest, cloudModel: string) {
@@ -100,7 +105,7 @@ async function makeModel(req: RunRequest, cloudModel: string) {
       model: cloudModel,
       generationConfig: { responseMimeType: 'application/json', responseJsonSchema: req.schema as Record<string, unknown>, temperature: 0.4 },
     },
-  });
+  }, { timeout: CLOUD_TIMEOUT_MS });
 }
 
 /**
@@ -116,15 +121,18 @@ export const firebaseRunner: ModelRunner = async (req) => {
     const source = result.response.inferenceSource === 'on_device' ? 'on_device' : 'in_cloud';
     return { text: result.response.text(), source, model: source === 'on_device' ? 'Gemini Nano' : cloudModel };
   };
-  try {
-    return await attempt(primary);
-  } catch (e) {
-    // A retired or unknown cloud model name: try the fallback once.
-    if (req.mode !== 'only_on_device' && fallback && fallback !== primary && /not.?found|404|unsupported model|is not supported/i.test(String(e))) {
-      return attempt(fallback);
+  const models = req.mode === 'only_on_device' || !fallback || fallback === primary ? [primary] : [primary, fallback];
+  let last: unknown;
+  for (const m of models) {
+    try {
+      // Busy or flaky: back off and retry. Still failing, or the model is gone: try the next model.
+      return await withRetry(() => attempt(m), { retries: 1, baseMs: 800, maxMs: 4000, isRetryable: (e) => isTransient(e) && !isTimeout(e) });
+    } catch (e) {
+      last = e;
+      if (!isTransient(e) && !isModelMissing(e)) throw e;
     }
-    throw e;
   }
+  throw last;
 };
 
 /** Starts the Gemini Nano download. Must be called from a click. */

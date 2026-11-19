@@ -8,8 +8,8 @@ export const FIREBASE_CONFIG = {
   appId: '1:266196978860:web:730b475ad45c70f1476309',
 };
 
-/** reCAPTCHA v3 site key for App Check (public). Set at build time. */
-export const RECAPTCHA_SITE_KEY: string = import.meta.env.VITE_RECAPTCHA_SITE_KEY ?? '';
+/** reCAPTCHA Enterprise site key for App Check (public by design). Set at build time. */
+export const RECAPTCHA_SITE_KEY: string = import.meta.env.VITE_RECAPTCHA_ENTERPRISE_SITE_KEY ?? '';
 
 /**
  * Remote Config defaults. These ship in the app so everything works offline
@@ -17,8 +17,10 @@ export const RECAPTCHA_SITE_KEY: string = import.meta.env.VITE_RECAPTCHA_SITE_KE
  * prompts without a redeploy.
  */
 export const REMOTE_DEFAULTS = {
-  cloud_model: 'gemini-3.8-flash',
-  cloud_model_fallback: 'gemini-3.5-flash-lite',
+  // Measured 19 Nov 2026 on the free tier: 3.5 Flash-Lite answered in ~1-5 s; 3.8 Flash was
+  // returning "high demand" or timing out. Remote Config can swap these without a deploy.
+  cloud_model: 'gemini-3.5-flash-lite',
+  cloud_model_fallback: 'gemini-3.8-flash',
   session_prompt: '',
   parent_prompt: '',
   progress_prompt: '',
