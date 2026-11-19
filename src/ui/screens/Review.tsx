@@ -76,7 +76,7 @@ export function Review({ id }: { id: string }) {
           {obs.length === 0 ? (
             <p class="muted small">No player notes in this session.</p>
           ) : (
-            <div class="stack-sm">
+            <div class="stack-sm obs-grid">
               {obs.map((o) => (
                 <article key={o.playerId} class="card" aria-labelledby={`o-${o.playerId}`}>
                   <div class="row-between" style={{ marginBottom: 10 }}>

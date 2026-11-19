@@ -19,7 +19,7 @@ export function Squad() {
           First names and nicknames are all Touchline needs. They never leave this phone.
         </Empty>
       ) : (
-        <div class="stack">
+        <div class="stack narrow">
           {[...byGroup.entries()].sort(([a], [b]) => a.localeCompare(b)).map(([g, ps]) => (
             <section key={g} aria-labelledby={`g-${g}`}>
               <div class="section-head" style={{ marginTop: 8 }}>

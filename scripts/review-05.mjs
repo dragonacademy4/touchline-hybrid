@@ -1,0 +1,16 @@
+import {setup,URL} from './review-lib.mjs';
+import fs from 'fs';
+const st=JSON.parse(fs.readFileSync('../qa/review/state-after-review.json'));
+const {b,ctx,p,errs,dump}=await setup();
+await ctx.close();
+const ctx2=await b.newContext({viewport:{width:375,height:812},deviceScaleFactor:2,storageState:'../qa/review/state-after-review.json',acceptDownloads:true,permissions:['clipboard-read','clipboard-write']});
+const q=await ctx2.newPage(); q.on('console',m=>{if(['error','warning'].includes(m.type()))errs.push(m.text())});
+const d=async(n,o={})=>{await q.screenshot({path:`../qa/review/375-${n}.png`,fullPage:o.full!==false}); console.log('\n=== '+n+' '+q.url()); if(o.text!==false) console.log((await q.locator('main, body').first().innerText()).slice(0,3500));};
+await q.goto(URL); await q.waitForTimeout(2500);
+await d('17-today-after',{text:true});
+await q.getByRole('link',{name:/Passing and receiving Thu 19/}).first().click().catch(async()=>{await q.getByText('Passing and receiving').first().click()}); await q.waitForTimeout(1500);
+console.log('URL',q.url());
+await q.getByText('What the model saw').click(); await q.waitForTimeout(800);
+await d('18-model-saw');
+await q.getByText('What the model saw').scrollIntoViewIfNeeded(); await q.screenshot({path:'../qa/review/375-18b-model-saw-vp.png'});
+await b.close(); console.log('ERRS',errs);

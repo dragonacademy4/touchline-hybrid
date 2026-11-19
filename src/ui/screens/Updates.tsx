@@ -31,7 +31,7 @@ export function Updates() {
 
   return (
     <Shell title="Parent updates">
-      <div class="stack">
+      <div class="stack narrow">
         <p class="muted">A weekly message for parents, written in the cloud from your session notes. Children's names are hidden before it's sent and put back on this phone.</p>
         <div class="grid-2">
           {allGroups.length > 1 ? (

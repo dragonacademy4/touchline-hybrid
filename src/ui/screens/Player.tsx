@@ -33,7 +33,7 @@ export function PlayerScreen({ id }: { id: string }) {
   return (
     <Shell title={player.name} backTo={{ name: 'squad' }}
       actions={<button class="icon-btn" type="button" aria-label={`Edit ${player.name}`} onClick={() => setEditing(true)}><IconEdit /></button>}>
-      <div class="stack">
+      <div class="stack narrow">
         <div class="row-between wrap">
           <p class="eyebrow">{player.group}</p>
           <span class="badge badge-cloud"><IconEyeOff /> The AI sees "{player.token}"</span>

@@ -1,0 +1,17 @@
+import {setup,URL} from './review-lib.mjs';
+const {b,p,errs,dump}=await setup();
+await p.goto(URL); await p.waitForTimeout(2000);
+await p.getByRole('button', { name: 'Try the demo squad' }).click(); await p.waitForTimeout(4500);
+await p.getByRole('button', { name: /Start today's session/ }).click(); await p.waitForTimeout(500);
+await p.getByRole('button', { name: 'Passing and receiving' }).click();
+await p.getByRole('button', { name: 'Start capturing' }).click(); await p.waitForTimeout(1000);
+await dump('05-capture');
+await p.getByRole('button', { name: /^Ollie/ }).click(); await p.waitForTimeout(600);
+await dump('06-note-sheet',{full:false});
+await p.getByRole('button', { name: 'Brave' }).click();
+await p.getByRole('button', { name: 'Weak foot' }).click();
+await p.getByRole('textbox', { name: 'Anything else?' }).fill('Ollie scored with his left foot and helped Seren up after she fell. Told Mason well done too.');
+await dump('07-note-filled',{full:false,text:false});
+await p.getByRole('button', { name: 'Done' }).click(); await p.waitForTimeout(600);
+await dump('08-capture-after1');
+await b.close(); console.log('ERRS',errs);

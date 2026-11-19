@@ -1,0 +1,13 @@
+import { chromium } from '@playwright/test';
+const out='../qa/review';
+const b = await chromium.launch({ channel: 'chrome' });
+const ctx = await b.newContext({ viewport: { width:375, height:812 }, deviceScaleFactor: 2 });
+const p = await ctx.newPage();
+const errs=[]; p.on('console',m=>{if(['error','warning'].includes(m.type()))errs.push(m.text())}); p.on('pageerror',e=>errs.push(String(e)));
+const dump=async(n)=>{await p.screenshot({path:`${out}/375-${n}.png`,fullPage:true}); console.log('=== '+n+' '+p.url()); console.log((await p.locator('body').innerText()).slice(0,2500)); const btns=await p.locator('button,a,[role=button],input,textarea,select').evaluateAll(es=>es.map(e=>`${e.tagName}:${e.getAttribute('aria-label')||e.innerText||e.placeholder||e.name||''}`.trim().replace(/\s+/g,' ')));console.log('CONTROLS:',btns.join(' | '));};
+await p.goto('https://touchline.impactlayer.workers.dev/'); await p.waitForTimeout(2500);
+await dump('01-first-run');
+await p.getByRole('button', { name: 'Try the demo squad' }).click(); await p.waitForTimeout(1500);
+await dump('02-today');
+console.log('ERRS',errs);
+await b.close();

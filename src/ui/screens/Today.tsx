@@ -45,7 +45,8 @@ export function Today() {
 
   return (
     <Shell title="Touchline">
-      <div class="stack">
+      <div class="today-grid">
+      <div class="stack today-main">
         <section class="hero" aria-labelledby="hero-label">
           <PitchArc class="pitch-arc" />
           <div class="row-between">
@@ -96,6 +97,7 @@ export function Today() {
         )}
       </div>
 
+      <div class="today-side">
       {(flags.length > 0 || recentWelfare.length > 0) && (
         <section aria-labelledby="flags-h">
           <div class="section-head"><h2 id="flags-h">Worth a look</h2></div>
@@ -142,6 +144,8 @@ export function Today() {
           </ul>
         )}
       </section>
+      </div>
+      </div>
 
       {starting && <StartSheet groups={allGroups} defaultGroup={shownGroup ?? allGroups[0]} nameOf={nameOf} onClose={() => setStarting(false)} />}
     </Shell>

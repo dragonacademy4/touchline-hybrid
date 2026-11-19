@@ -1,0 +1,28 @@
+<!doctype html><html><body><script type="module">
+// Live Firestore security-rules probe (served by the Vite dev server only).
+import { initializeApp } from 'firebase/app';
+import { getAuth, signInAnonymously } from 'firebase/auth';
+import { getFirestore, doc, setDoc, getDoc, deleteDoc, serverTimestamp, collection, getDocs } from 'firebase/firestore';
+import { FIREBASE_CONFIG } from '../../../src/ai/config';
+const app = initializeApp(FIREBASE_CONFIG);
+const db = getFirestore(app);
+const good = () => ({ v: 1, date: '2026-11-19', group: 'Under 9s', focus: 'Passing', observations: [{ token: 'P01', strength: 's', nextStep: 'n' }], summary: 'x', source: 'in_cloud', updatedAt: serverTimestamp() });
+const run = async (name, fn) => { try { await fn(); return `${name}: ALLOWED`; } catch (e) { return `${name}: DENIED (${e.code})`; } };
+window.probe = async () => {
+  const { user } = await signInAnonymously(getAuth(app));
+  const mine = doc(db, 'coaches', user.uid, 'sessions', 'rules-probe');
+  const out = [];
+  out.push(await run('write own valid record', () => setDoc(mine, good())));
+  out.push(await run('read own record', () => getDoc(mine)));
+  out.push(await run('write with extra "names" field', () => setDoc(mine, { ...good(), names: { P01: 'Ollie' } })));
+  out.push(await run('write bad source', () => setDoc(mine, { ...good(), source: 'whatever' })));
+  out.push(await run('write 2001-char summary', () => setDoc(mine, { ...good(), summary: 'a'.repeat(2001) })));
+  out.push(await run("write another coach's path", () => setDoc(doc(db, 'coaches', 'someone-else', 'sessions', 'x'), good())));
+  out.push(await run("read another coach's path", () => getDoc(doc(db, 'coaches', 'someone-else', 'sessions', 'x'))));
+  out.push(await run('list all coaches', () => getDocs(collection(db, 'coaches'))));
+  out.push(await run('write top-level doc', () => setDoc(doc(db, 'anything', 'x'), { a: 1 })));
+  out.push(await run('delete own record', () => deleteDoc(mine)));
+  return out.join('\n');
+};
+window.ready = true;
+</script></body></html>

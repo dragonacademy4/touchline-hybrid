@@ -55,7 +55,7 @@ export function SettingsScreen() {
 
   return (
     <Shell title="Settings">
-      <div class="stack">
+      <div class="stack narrow">
         <section class="card stack-sm" aria-labelledby="ai-h">
           <h2 id="ai-h" class="title">AI on this device</h2>
           <div class={`banner ${n === 'available' ? 'banner-device' : 'banner-info'}`}>
