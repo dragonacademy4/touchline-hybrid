@@ -176,3 +176,12 @@ export async function signOutAndForget(): Promise<void> {
   if (auth.currentUser) await deleteUser(auth.currentUser).catch(() => signOut(auth));
   dbPromise = null;
 }
+
+/**
+ * Loads the AI code paths in the background while there's signal, so a coach
+ * who opened the app online can still structure notes on-device after losing
+ * signal (the service worker also precaches these files).
+ */
+export async function warmUp(): Promise<void> {
+  await Promise.all([import('firebase/app'), import('firebase/ai'), import('firebase/app-check'), import('firebase/remote-config')]);
+}

@@ -29,4 +29,4 @@ export const REMOTE_DEFAULTS = {
 export type RemoteKey = keyof typeof REMOTE_DEFAULTS;
 
 /** Public source repository, set at build time (shown in Settings). */
-export const REPO_URL: string = import.meta.env.VITE_REPO_URL ?? '';
+export const REPO_URL: string = import.meta.env.VITE_REPO_URL ?? 'https://github.com/dragonacademy4/touchline-hybrid';

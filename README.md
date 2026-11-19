@@ -19,23 +19,24 @@ Touchline uses **Firebase AI Logic hybrid inference** so each job runs where it 
 | Weekly parent update for a group | **Cloud** (Gemini Flash-Lite) | `only_in_cloud` | Longer, polished writing across several sessions, done back in signal |
 | 4-week progress report per child | **Cloud** | `only_in_cloud` | Reasoning across a month of records |
 
-**Names never leave the device.** Before *any* model call (on-device included, because `prefer_on_device` can fall back to the cloud), every squad name and nickname is replaced with a stable token such as `P03`, plus any extra words the coach lists, emails and phone numbers. A leak check then refuses to send anything that still contains a name. Results come back with tokens and are restored on the device. Every AI result shows where it ran ("On this device" or "In the cloud · names hidden"), and a **What the model saw** panel shows the exact text that was sent.
+**Names never leave the device.** Before *any* model call (on-device included, because `prefer_on_device` can fall back to the cloud), every squad name, nickname and part of a name is replaced with a stable token such as `P03`, plus any extra words the coach lists, emails and phone numbers. If the notes still mention someone outside the squad ("mum Sarah Jones"), a **Check before it goes** step asks the coach to hide them, ticked by default. A leak check then refuses to send anything that still contains a name. Results come back with tokens and are restored on the device. Every AI result shows where it ran ("On this device" or "In the cloud · names hidden"), and a **What the model saw** panel shows the exact text that was sent.
 
 Where to look in the code:
 
-- Hybrid model creation (`mode`, `onDeviceParams.promptOptions.responseConstraint`, `inCloudParams.generationConfig.responseJsonSchema`): [`src/ai/firebase.ts#L95`](src/ai/firebase.ts#L95)
-- The runner that calls `generateContent` and reads `response.inferenceSource`, with retry, timeout and a fallback model: [`src/ai/firebase.ts#L115`](src/ai/firebase.ts#L115)
-- Gemini Nano download on a user gesture (`initializeDeviceModel`): [`src/ai/firebase.ts#L141`](src/ai/firebase.ts#L141)
-- Where each job runs (`planSessionRun`): [`src/ai/engine.ts#L81`](src/ai/engine.ts#L81)
-- Mask → prompt → leak check: [`src/ai/engine.ts#L130`](src/ai/engine.ts#L130)
-- Session structuring, parent update and progress report: [`src/ai/engine.ts#L170`](src/ai/engine.ts#L170), [`#L237`](src/ai/engine.ts#L237), [`#L288`](src/ai/engine.ts#L288)
-- The masker (whole words, accents, nicknames, duplicates, possessives, invisible characters…): [`src/lib/mask.ts#L256`](src/lib/mask.ts#L256)
+- Hybrid model creation (`mode`, `onDeviceParams.promptOptions.responseConstraint`, `inCloudParams.generationConfig.responseJsonSchema`): [`src/ai/firebase.ts#L97`](src/ai/firebase.ts#L97)
+- The runner that calls `generateContent` and reads `response.inferenceSource`, with retry, timeout and a fallback model: [`src/ai/firebase.ts#L117`](src/ai/firebase.ts#L117)
+- Gemini Nano download on a user gesture (`initializeDeviceModel`): [`src/ai/firebase.ts#L145`](src/ai/firebase.ts#L145)
+- Where each job runs (`planSessionRun`): [`src/ai/engine.ts#L86`](src/ai/engine.ts#L86)
+- Mask → prompt → leak check: [`src/ai/engine.ts#L171`](src/ai/engine.ts#L171)
+- "Check before it goes": likely names outside the squad, found on the device ([`src/lib/suspects.ts`](src/lib/suspects.ts)) and confirmed by the coach before any cloud call: [`src/ai/engine.ts#L160`](src/ai/engine.ts#L160)
+- Session structuring, parent update and progress report: [`src/ai/engine.ts#L222`](src/ai/engine.ts#L222), [`#L237`](src/ai/engine.ts#L294), [`#L288`](src/ai/engine.ts#L349)
+- The masker (whole words, accents, nicknames, duplicates, possessives, invisible characters…): [`src/lib/mask.ts#L268`](src/lib/mask.ts#L268)
 - One JSON Schema shared by Gemini Nano and the cloud model, plus tolerant parsers: [`src/lib/schema.ts`](src/lib/schema.ts)
 - Gemini Nano availability check: [`src/ai/availability.ts`](src/ai/availability.ts)
 
 ### Other Firebase products
 
-- **App Check** with reCAPTCHA Enterprise protects the AI Logic endpoint ([`src/ai/firebase.ts#L30`](src/ai/firebase.ts#L30)).
+- **App Check** with reCAPTCHA Enterprise protects the AI Logic endpoint ([`src/ai/firebase.ts#L31`](src/ai/firebase.ts#L31)).
 - **Remote Config** holds the cloud model names and optional prompt overrides, so a retired model can be swapped without a deploy ([`src/ai/config.ts`](src/ai/config.ts)).
 - **Anonymous Auth + Firestore** keep an *anonymised* backup of structured sessions: tokens only, no names, under `coaches/{uid}/sessions/{id}`, with Firestore's offline cache queueing writes made without signal ([`src/sync/anonymise.ts`](src/sync/anonymise.ts), rules in [`firestore.rules`](firestore.rules)).
 
@@ -93,7 +94,7 @@ The end-to-end suite fakes only the network edge (the AI Logic REST endpoint) an
 - No analytics, no ads, no tracking cookies, no accounts beyond an anonymous Firebase sign-in.
 - Full plain-English policy in the app (Settings → How Touchline handles data).
 
-Known limits, stated honestly: names that are also everyday words (Will, Mark, Max…) are hidden when capitalised but left alone in lowercase ("he will need to"), because a lowercase everyday word doesn't identify a child. Surnames are only hidden if added as a nickname (Touchline asks for first names). Every case is pinned by a test in `tests/unit/mask*.test.ts`.
+Known limits, stated honestly: spellings the coach hasn't added (write "Olly" for "Ollie") are only caught if the check-before-sending step flags them, and that step relies on capitalisation and an English word list. Names that are also everyday words (Will, Mark, Max…) are hidden when capitalised but left alone in lowercase ("he will need to"), because a lowercase everyday word doesn't identify a child. Surnames are only hidden if added as a nickname (Touchline asks for first names). Every case is pinned by a test in `tests/unit/mask*.test.ts`.
 
 ## Built with
 

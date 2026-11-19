@@ -12,6 +12,12 @@ render(<App />, document.getElementById('app')!);
 
 init().then(() => {
   if (navigator.onLine) syncNow();
+  // Warm the AI code while there's signal so on-device structuring works after it drops.
+  const idle = (cb: () => void) => ('requestIdleCallback' in window ? requestIdleCallback(cb) : setTimeout(cb, 1500));
+  idle(() => {
+    import('./ai/firebase').then((m) => m.warmUp()).catch(() => undefined);
+    import('./data/store').then((m) => m.getPrompts()).catch(() => undefined);
+  });
 });
 
 const refreshNano = () => nanoStatus().then((s) => (nano.value = s));

@@ -148,3 +148,26 @@ test('check before it goes: Cancel sends nothing', async ({ page }) => {
   await expect(page.getByRole('dialog')).toBeHidden();
   expect(log.requests.filter((r) => r.url.includes('firebasevertexai'))).toEqual([]);
 });
+
+test.describe('offline on-device', () => {
+test.use({ serviceWorkers: 'block' });
+test('on-device path works fully offline (only_on_device, no network at all)', async ({ page, context }) => {
+  await fakeGeminiNano(page, 'available');
+  const log = await mockFirebase(page);
+  await startDemo(page);
+  await startSession(page);
+  await page.waitForTimeout(2500); // the app warms its AI code while online
+  await context.setOffline(true);
+  const before = log.requests.length;
+  await addNote(page, 'Seren', ['Good passing'], 'Seren found Ollie with a lovely pass');
+  await expect(page.getByRole('link', { name: /^Offline\. AI: AI runs on this device/ })).toBeVisible();
+  await page.getByRole('button', { name: 'Structure on this phone' }).click();
+  await expect(page).toHaveURL(/\/review$/);
+  await expect(page.locator('[data-source="on_device"]').first()).toBeVisible();
+  await expect(page.getByText('Brilliant effort today, Seren!')).toBeVisible();
+  expect(log.requests.length).toBe(before);
+  const calls = await page.evaluate(() => (window as unknown as { __nanoCalls: Array<{ text: string }> }).__nanoCalls);
+  expect(calls.at(-1)!.text).toContain('[P12] found [P01] with a lovely pass');
+  await context.setOffline(false);
+});
+});

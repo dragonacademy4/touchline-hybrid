@@ -3,7 +3,7 @@
  * App Check debug token registered in the Firebase console, passed in
  * TOUCHLINE_APPCHECK_DEBUG_TOKEN. Run: npm run e2e:live
  */
-import { addNote, bodiesWithNames, expect, startDemo, startSession, test, QA } from '../e2e/fixtures';
+import { addNote, expect, startSession, test, QA } from '../e2e/fixtures';
 
 const token = process.env.TOUCHLINE_APPCHECK_DEBUG_TOKEN;
 // Against the deployed site, App Check uses real reCAPTCHA Enterprise instead of a debug token.
@@ -18,7 +18,10 @@ test('real cloud: structure a session, parent update and progress via Firebase A
   page.on('response', (r) => { const e = log.find((x) => x.url === r.url() && x.status === undefined); if (e) e.status = r.status(); });
   page.on('console', (m) => console.log(`[console.${m.type()}] ${m.text().slice(0, 300)}`));
   if (!site) await page.addInitScript((t) => { (self as unknown as { FIREBASE_APPCHECK_DEBUG_TOKEN: string }).FIREBASE_APPCHECK_DEBUG_TOKEN = t; }, token!);
-  await startDemo(page);
+  await page.goto('/');
+  await page.getByRole('switch', { name: /Back up anonymised sessions/ }).check();
+  await page.getByRole('button', { name: 'Try the demo squad' }).click();
+  await expect(page.getByText(/of 12 players/)).toBeVisible();
   await startSession(page, 'Passing and receiving');
   await addNote(page, 'Ollie', ['Brave', 'Weak foot'], 'Ollie scored with his left foot and helped Seren up after she fell');
   await addNote(page, 'Amara', ['Good passing'], 'Amara switched play twice, lovely vision');
